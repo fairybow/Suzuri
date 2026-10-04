@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=@_pub_app_name@
+Comment=A plain-text editor for creative writing
+Exec=@_pub_app_name@
+Icon=@_pub_app_id@
+Terminal=false
+Categories=Office;WordProcessor;

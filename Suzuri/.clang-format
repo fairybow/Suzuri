@@ -1,0 +1,48 @@
+# Adjust in (and copy from) Coco
+
+# BasedOnStyle: WebKit
+
+AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+AlignArrayOfStructures: Left
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false # Deprecated, but VS clang isn't updated
+BinPackParameters: false # Deprecated, but VS clang isn't updated
+BreakAfterOpenBracketFunction: true
+BreakBeforeBraces: Mozilla
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 80
+CompactNamespaces: true
+Cpp11BracedListStyle: Block
+FixNamespaceComments: true
+IndentWidth: 4
+InsertBraces: true
+InsertNewlineAtEOF: true
+IndentPPDirectives: AfterHash
+LineEnding: CRLF
+PointerAlignment: Left
+SortIncludes: CaseSensitive
+SpaceInEmptyBraces: Never
+Standard: c++20
+
+# AlignOperands: Align
+# AllowShortBlocksOnASingleLine: true
+# AllowShortLambdasOnASingleLine: Inline
+# AllowShortEnumsOnASingleLine: true
+# AllowShortFunctionsOnASingleLine: Empty
+# AllowShortIfStatementsOnASingleLine: WithoutElse
+# BreakAfterReturnType: Automatic
+# BreakBeforeBinaryOperators: NonAssignment
+# BreakBeforeTernaryOperators: true
+# IncludeBlocks: Preserve
+# IndentPPDirectives: AfterHash
+# PackConstructorInitializers: Never
+# ShortNamespaceLines: 0
+# SpaceBeforeAssignmentOperators: true
+# SpaceBeforeCaseColon: false
+# SpaceBeforeCpp11BracedList: false
+# SpaceBeforeCtorInitializerColon: true
+# SpaceBeforeInheritanceColon: true
+# SpaceBeforeRangeBasedForLoopColon: true
+# ExperimentalAutoDetectBinPacking: true

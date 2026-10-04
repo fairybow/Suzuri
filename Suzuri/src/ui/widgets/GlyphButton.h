@@ -1,0 +1,179 @@
+/*
+ * Suzuri — A plain-text editor for creative writing
+ * Copyright (C) 2026 fairybow
+ *
+ * This program is free software, redistributable and/or modifiable under the
+ * terms of the GNU GPL v3. It's distributed in the hope that it will be useful
+ * but without any warranty (even the implied warranty of merchantability or
+ * fitness for a particular purpose)
+ *
+ * See the LICENSE file or visit <https://www.gnu.org/licenses/>
+ */
+
+#pragma once
+
+#include <QAbstractButton>
+#include <QColor>
+#include <QEnterEvent>
+#include <QEvent>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPalette>
+#include <QPixmap>
+#include <QString>
+#include <QStyle>
+#include <QStyleOptionToolButton>
+#include <QWidget>
+#include <QtMinMax>
+
+#include <Coco/Path.h>
+
+#include "ui/widgets/Glyph.h"
+
+namespace Suzuri::Ui {
+
+// The shared base for small square glyph buttons that sit on the style's own
+// chrome: a Lucide glyph, tinted from the palette, centered on the style's
+// auto-raise tool-button panel. Its current subclasses are the tab row's
+// per-tab close/unpin button (TabCloseButton) and new-tab + button
+// (NewTabButton). It carries everything mechanical such buttons have in common
+// and nothing that differs between them.
+//
+// The single axis of divergence is which glyph to paint right now, expressed as
+// two pure virtuals: glyphPath() and glyphRole(), its tint. paintEvent calls
+// both every repaint, so a subclass whose glyph is backed by live state (a
+// page's pin bit) needs no cached flag and no manual sync — pin/unpin anywhere
+// shows up on the next repaint. A subclass with a fixed glyph just returns
+// constants.
+//
+// The render goes through one Glyph::Cache. Path and tint are both in its key,
+// so a live swap (pin/unpin, a palette or color-group change) costs one render
+// and every other repaint — hover, press, release — costs none.
+//
+// The frame is the style's auto-raise tool-button panel (flat at rest, the
+// style's outline on hover, sunk on press, with the glyph shifting along with
+// it). Every subclass paints the identical panel from this identical code, so
+// none can drift from another on any platform style — there is no "real"
+// QToolButton for any of them to chase.
+//
+// Deliberately behavior-free: it emits clicked() (from QAbstractButton) and
+// nothing more. What a click means is wired per button by the owner (on the
+// tab row, TabPaneLeaf: new-tab vs close/unpin), exactly as QTabBar keeps close
+// handling in the bar rather than the button.
+//
+// Size is fixed at construction from the subclass's UiConstants knobs (extent =
+// the button's square footprint; iconExtent = the centered glyph, the
+// difference being padding), not from a style metric. The obvious one for the
+// tab row, PM_TabCloseIndicator, runs tiny on some styles.
+//
+// Not for buttons that can't sit on the style's chrome. ZoomButton_ floats
+// over document content, so it paints its own flat wash and a fixed light tint;
+// it shares only the SVG render and its cache (Glyph.h) with this family
+class GlyphButton : public QAbstractButton
+{
+    Q_OBJECT
+
+public:
+    explicit GlyphButton(int extent, int iconExtent, QWidget* parent)
+        : QAbstractButton(parent)
+        , iconExtent_(iconExtent)
+    {
+        setup_(extent);
+    }
+
+protected:
+    // The one axis of divergence: the glyph this button paints right now.
+    // Called every paintEvent, so a subclass backed by mutable state returns it
+    // live rather than caching a flag
+    [[nodiscard]] virtual Coco::Path glyphPath() const = 0;
+
+    // The glyph's tint, resolved against the widget's current group. Called
+    // alongside glyphPath, so a live-state subclass keeps path and tint in
+    // step
+    [[nodiscard]] virtual QPalette::ColorRole glyphRole() const = 0;
+
+    void enterEvent(QEnterEvent* event) override
+    {
+        QAbstractButton::enterEvent(event);
+        update(); // show the auto-raise frame on hover
+    }
+
+    void leaveEvent(QEvent* event) override
+    {
+        QAbstractButton::leaveEvent(event);
+        update(); // drop the frame when the pointer leaves
+    }
+
+    void paintEvent([[maybe_unused]] QPaintEvent* event) override
+    {
+        QPainter painter(this);
+
+        // Auto-raise tool-button panel: flat at rest, the style's outline only
+        // on hover/press. We hand the style the exact option state a flat
+        // QToolButton builds — State_AutoRaise always, State_Sunken when down,
+        // State_MouseOver carried in by initFrom — and let it draw the panel.
+        // The style suppresses the bevel while flat, so at rest only the glyph
+        // shows
+        QStyleOptionToolButton option{};
+        option.initFrom(this); // carries State_MouseOver from underMouse()
+        option.state |= QStyle::State_AutoRaise;
+        if (isDown()) {
+            option.state |= QStyle::State_Sunken;
+        }
+        style()->drawPrimitive(
+            QStyle::PE_PanelButtonTool,
+            &option,
+            &painter,
+            this);
+
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+        // Glyph clamped to the button so an over-large constant fills it rather
+        // than overflowing
+        auto extent = qMin(iconExtent_, qMin(width(), height()));
+        if (extent <= 0) {
+            return;
+        }
+
+        auto pixmap = glyph_.pixmap(
+            glyphPath(),
+            extent,
+            palette().color(glyphRole()),
+            devicePixelRatioF());
+
+        auto x = (width() - extent) / 2;
+        auto y = (height() - extent) / 2;
+
+        // Sink the glyph with the panel on press. The metrics are 0 on styles
+        // that don't shift, so this is a no-op there
+        if (option.state & QStyle::State_Sunken) {
+            x += style()->pixelMetric(
+                QStyle::PM_ButtonShiftHorizontal,
+                &option,
+                this);
+            y += style()->pixelMetric(
+                QStyle::PM_ButtonShiftVertical,
+                &option,
+                this);
+        }
+
+        painter.drawPixmap(x, y, pixmap);
+    }
+
+private:
+    int iconExtent_;
+    Glyph::Cache glyph_{};
+
+    void setup_(int extent)
+    {
+        setAttribute(
+            Qt::WA_Hover,
+            true); // hover state for the auto-raise frame
+        setFocusPolicy(Qt::NoFocus);
+        setCursor(Qt::ArrowCursor);
+        setFixedSize(extent, extent);
+    }
+};
+
+} // namespace Suzuri::Ui

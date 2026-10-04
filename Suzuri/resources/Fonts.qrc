@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>fonts/courierprime/Courier Prime Bold Italic.ttf</file>
+        <file>fonts/courierprime/Courier Prime Bold.ttf</file>
+        <file>fonts/courierprime/Courier Prime Italic.ttf</file>
+        <file>fonts/courierprime/Courier Prime.ttf</file>
+        <file>fonts/literata/Literata-Italic-VariableFont_opsz,wght.ttf</file>
+        <file>fonts/literata/Literata-VariableFont_opsz,wght.ttf</file>
+        <file>fonts/mononoki/mononoki-Bold.otf</file>
+        <file>fonts/mononoki/mononoki-BoldItalic.otf</file>
+        <file>fonts/mononoki/mononoki-Italic.otf</file>
+        <file>fonts/mononoki/mononoki-Regular.otf</file>
+        <file>fonts/opendyslexic/OpenDyslexic-Bold.otf</file>
+        <file>fonts/opendyslexic/OpenDyslexic-BoldItalic.otf</file>
+        <file>fonts/opendyslexic/OpenDyslexic-Italic.otf</file>
+        <file>fonts/opendyslexic/OpenDyslexic-Regular.otf</file>
+    </qresource>
+</RCC>

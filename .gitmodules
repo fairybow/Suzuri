@@ -1,0 +1,3 @@
+[submodule "Suzuri/submodules/Coco"]
+	path = Suzuri/submodules/Coco
+	url = https://github.com/fairybow/Coco

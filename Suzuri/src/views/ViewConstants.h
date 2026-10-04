@@ -1,0 +1,70 @@
+/*
+ * Suzuri — A plain-text editor for creative writing
+ * Copyright (C) 2026 fairybow
+ *
+ * This program is free software, redistributable and/or modifiable under the
+ * terms of the GNU GPL v3. It's distributed in the hope that it will be useful
+ * but without any warranty (even the implied warranty of merchantability or
+ * fitness for a particular purpose)
+ *
+ * See the LICENSE file or visit <https://www.gnu.org/licenses/>
+ */
+
+#pragma once
+
+#include <QColor>
+#include <QPalette>
+#include <QtTypes>
+
+namespace Suzuri {
+
+// Values tuned by hand for the parts the views are built from: the text editor
+// (TextEditor), its selection handles (SelectionHandles), and the zoom control
+// (ZoomControl). The views' counterpart of ui/UiConstants.h
+
+// The floating zoom overlay on scaled document views (ZoomControl), bottom-
+// right over the content. ICON_COLOR tints the - and + glyphs and
+// READOUT_COLOR the readout's text: fixed colors rather than palette roles,
+// since the pill floats over document content and couldn't follow the app
+// palette and stay legible. BUTTON_EXTENT is a button's square footprint and
+// ICON_EXTENT the glyph centered in it, the difference being padding.
+// READOUT_WIDTH fits "100%"; MARGIN insets the pill from the view's corner;
+// RADIUS rounds it
+inline constexpr auto ZOOM_CONTROL_ICON_COLOR = QColor(255, 255, 255, 220);
+inline constexpr auto ZOOM_CONTROL_READOUT_COLOR = QColor(255, 255, 255, 220);
+inline constexpr int ZOOM_CONTROL_BUTTON_EXTENT = 28;
+inline constexpr int ZOOM_CONTROL_ICON_EXTENT = 14;
+inline constexpr int ZOOM_CONTROL_READOUT_WIDTH = 48;
+inline constexpr int ZOOM_CONTROL_MARGIN = 16;
+inline constexpr int ZOOM_CONTROL_RADIUS = 6;
+
+// The editor's line-number gutter (TextEditor). ROLE is the pen the numbers are
+// drawn with, muted like the status bar's text. The gutter is never narrower
+// than MIN_DIGITS digits: each time it widens, the viewport narrows and the
+// whole document rewraps, so a floor of 3 would put the first such jump at line
+// 1000. LEFT_PADDING is the gap between the editor's edge and the numbers;
+// RIGHT_PADDING the gap between the numbers and the text area (the document's
+// own margin is added to that)
+inline constexpr auto LINE_NUMBER_ROLE = QPalette::PlaceholderText;
+inline constexpr int LINE_NUMBER_MIN_DIGITS = 1;
+inline constexpr int LINE_NUMBER_LEFT_PADDING = 8;
+inline constexpr int LINE_NUMBER_RIGHT_PADDING = 8;
+
+// The editor's current-line highlight (TextEditor): the band behind the row
+// the text cursor is on, filled with this role's brush
+inline constexpr auto LINE_HIGHLIGHT_ROLE = QPalette::AlternateBase;
+
+// The editor's selection handles (SelectionHandles): a teardrop under each
+// end of a selection. RADIUS is the round bulb's; STEM_HEIGHT the gap between
+// the text and the top of the bulb, which the teardrop's point spans.
+// HIT_RADIUS, around the bulb's center, is the area that grabs the handle:
+// larger than the bulb, to be easy to catch, and a click on text within it
+// takes the handle instead
+inline constexpr auto SELECTION_HANDLE_FILL_ROLE = QPalette::Highlight;
+inline constexpr auto SELECTION_HANDLE_BORDER_ROLE = QPalette::Base;
+inline constexpr qreal SELECTION_HANDLE_BORDER_WIDTH = 1.0;
+inline constexpr qreal SELECTION_HANDLE_RADIUS = 7.0;
+inline constexpr qreal SELECTION_HANDLE_STEM_HEIGHT = 4.0;
+inline constexpr qreal SELECTION_HANDLE_HIT_RADIUS = 14.0;
+
+} // namespace Suzuri
