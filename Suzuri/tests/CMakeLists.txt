@@ -9,17 +9,14 @@
 # See the LICENSE file or visit <https://www.gnu.org/licenses/>
 
 # Qt Test, one executable per test class. Each is a single .cpp named for its
-# class, and includes the app's headers straight from src/: the app is
-# header-only, so there is no library to link against.
+# class, and includes the app's headers straight from src/.
 
 find_package(Qt6 REQUIRED COMPONENTS Test)
 
-# Builds <name>.cpp as a test executable and registers it with CTest. Every
-# test gets what the app's own headers need to compile: the same include root,
-# the same APP_DEBUG definition, Coco, and the same Qt modules.
-function(app_add_test name)
-    qt_add_executable(${name} ${name}.cpp)
-
+# What any target here needs to compile the app's headers: the same include
+# root, the same APP_DEBUG definition, Coco, the same Qt modules, and the same
+# compiler options.
+function(app_configure_test_target name)
     target_include_directories(${name} PRIVATE
         ${PROJECT_SOURCE_DIR}/src
     )
@@ -54,6 +51,32 @@ function(app_add_test name)
             -Wall -Wextra -Wpedantic
         )
     endif()
+endfunction()
+
+# --- Meta-object code for the app's QObject classes ---
+
+# The app is header-only, but a class with Q_OBJECT also needs the code moc
+# generates for it, and including the header doesn't provide that. AUTOMOC
+# generates it for each header listed here, once, and every test links the
+# result. A test of a QObject class not listed fails to LINK, naming the
+# class's staticMetaObject: add its header, and the header of each QObject
+# base class.
+add_library(AppTestMocs OBJECT
+    ${PROJECT_SOURCE_DIR}/src/models/AbstractFileModel.h
+    ${PROJECT_SOURCE_DIR}/src/models/PrimeDocument.h
+    ${PROJECT_SOURCE_DIR}/src/models/TextFileModel.h
+)
+
+app_configure_test_target(AppTestMocs)
+
+# --- Tests ---
+
+# Builds <name>.cpp as a test executable and registers it with CTest.
+function(app_add_test name)
+    qt_add_executable(${name} ${name}.cpp)
+
+    app_configure_test_target(${name})
+    target_link_libraries(${name} PRIVATE AppTestMocs)
 
     add_test(NAME ${name} COMMAND ${name})
 
@@ -65,3 +88,4 @@ endfunction()
 
 app_add_test(FileTypesTest)
 app_add_test(TextCountsTest)
+app_add_test(TextFileModelTest)
