@@ -30,4 +30,4 @@ Suzuri is early in development, and more features are planned. I expect to keep 
 
 I enjoy working on Suzuri, and I'm genuinely grateful for any support. You can do that [here](https://ko-fi.com/fairybow).
 
-But if you're going to give anywhere, I'd rather you please give to [United24](https://u24.gov.ua/) and help defend Ukraine. Civilians there are under attack every day, and your money will do far more good that way.
+But if you're going to give anywhere, I'd rather you please give to [United24 🇺🇦](https://u24.gov.ua/) and help defend Ukraine. Civilians there are under attack every day, and your money will do far more good that way.
