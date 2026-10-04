@@ -21,8 +21,8 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 
 ## Before release
 
-- [ ] `LogView` opens on every launch, for testing. Put it behind its command-line flag
-- [ ] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
+- [x] `LogView` opens on every launch, for testing. Put it behind its command-line flag
+- [x] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
 - [ ] Test the OS logout save path (`App::onCommitDataRequest_`)
 
 ## Code
@@ -30,7 +30,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] Verify the `PrimeDocument` header, and rename it
 - [ ] Rename `BaseWindow`'s protected members that have a trailing underscore
 - [ ] Bring `MenuBuilder` over from Hearth (maybe into Coco)?
-- [ ] Decide on `private slots:`. It isn't used consistently, and using it properly would break up sections that are organized by purpose. Either remove the keyword everywhere or sort slots into it everywhere
+- [x] Decide on `private slots:`. It isn't used consistently, and using it properly would break up sections that are organized by purpose. Either remove the keyword everywhere or sort slots into it everywhere
 - [ ] `AbstractFileModel` has `notifyX()` functions that only emit a signal. Could they just be signals (perhaps named `notify...`)?
 - [ ] Decide whether static helpers go before other functions, per access level
 - [ ] A shared `TabPage` base for tab pages, holding title and pin state as typed members in place of the window title and a dynamic property. It would trade the leaf's property reads for a cast. Worth doing once a third such value appears

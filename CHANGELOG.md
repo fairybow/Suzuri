@@ -10,7 +10,7 @@
 
 <!-- release-preamble-start -->
 
-**Suzuri is an Obsidian-like plain-text editor for creative writing.**
+**Suzuri is a plain-text editor for creative writing.**
 
 This is a soft release. For a full feature list, see [Features.md](https://github.com/fairybow/Suzuri/blob/main/Suzuri/docs/Features.md). For past release details, see [CHANGELOG.md](https://github.com/fairybow/Suzuri/blob/main/CHANGELOG.md)
 
