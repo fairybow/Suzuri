@@ -44,7 +44,7 @@ private slots:
 
         // Joiners: inside a word only when between two of its characters
         QTest::newRow("apostrophe") << u"don't"_s << 1;
-        QTest::newRow("typeset apostrophe") << u"don’t"_s << 1;
+        QTest::newRow("typeset apostrophe") << u"don\u2019t"_s << 1;
         QTest::newRow("hyphen") << u"well-known"_s << 1;
         QTest::newRow("periods") << u"e.g."_s << 1;
         QTest::newRow("decimal") << u"3.14"_s << 1;
@@ -61,13 +61,13 @@ private slots:
         QTest::newRow("comma and space") << u"one, two"_s << 2;
 
         // Separators
-        QTest::newRow("em dash") << u"word—word"_s << 2;
+        QTest::newRow("em dash") << u"word\u2014word"_s << 2;
         QTest::newRow("slash") << u"and/or"_s << 2;
-        QTest::newRow("ellipsis character") << u"wait…what"_s << 2;
+        QTest::newRow("ellipsis character") << u"wait\u2026what"_s << 2;
 
         // Only letters and digits make a word
         QTest::newRow("lone hyphen") << u"-"_s << 0;
-        QTest::newRow("lone em dash") << u"—"_s << 0;
+        QTest::newRow("lone em dash") << u"\u2014"_s << 0;
         QTest::newRow("Markdown heading") << u"# Heading"_s << 1;
         QTest::newRow("Markdown bold") << u"**bold**"_s << 1;
         QTest::newRow("underscore") << u"snake_case"_s << 1;
@@ -75,16 +75,16 @@ private slots:
         QTest::newRow("word and emoji") << u"hi \U0001F600"_s << 1;
 
         // An accent stored as its own code point belongs to its letter
-        QTest::newRow("combining accent") << u"café"_s << 1;
-        QTest::newRow("precomposed accent") << u"café"_s << 1;
+        QTest::newRow("combining accent") << u"cafe\u0301"_s << 1;
+        QTest::newRow("precomposed accent") << u"caf\u00E9"_s << 1;
 
         // Chinese characters and Japanese kana are one word each. Korean
         // uses spaces
-        QTest::newRow("Han") << u"日本語"_s << 3;
-        QTest::newRow("Hiragana") << u"ひらがな"_s << 4;
-        QTest::newRow("Katakana") << u"カタカナ"_s << 4;
-        QTest::newRow("Korean") << u"한국어 단어"_s << 2;
-        QTest::newRow("Han beside Latin") << u"abc日本def"_s << 4;
+        QTest::newRow("Han") << u"\u65E5\u672C\u8A9E"_s << 3;
+        QTest::newRow("Hiragana") << u"\u3072\u3089\u304C\u306A"_s << 4;
+        QTest::newRow("Katakana") << u"\u30AB\u30BF\u30AB\u30CA"_s << 4;
+        QTest::newRow("Korean") << u"\uD55C\uAD6D\uC5B4 \uB2E8\uC5B4"_s << 2;
+        QTest::newRow("Han beside Latin") << u"abc\u65E5\u672Cdef"_s << 4;
 
         QTest::newRow("sentence")
             << u"It's a well-known fact, e.g. this one."_s << 7;
@@ -106,14 +106,14 @@ private slots:
         QTest::newRow("empty") << u""_s << 0;
         QTest::newRow("letters") << u"abc"_s << 3;
         QTest::newRow("spaces and a tab count") << u"a b\t"_s << 4;
-        QTest::newRow("precomposed accent") << u"é"_s << 1;
+        QTest::newRow("precomposed accent") << u"\u00E9"_s << 1;
 
         // One character to a reader, two UTF-16 code units each
-        QTest::newRow("combining accent") << u"é"_s << 1;
+        QTest::newRow("combining accent") << u"e\u0301"_s << 1;
         QTest::newRow("emoji") << u"\U0001F600"_s << 1;
 
-        QTest::newRow("Han") << u"日本語"_s << 3;
-        QTest::newRow("mixed") << u"a\U0001F600é"_s << 3;
+        QTest::newRow("Han") << u"\u65E5\u672C\u8A9E"_s << 3;
+        QTest::newRow("mixed") << u"a\U0001F600e\u0301"_s << 3;
     }
 
     void characterCount()

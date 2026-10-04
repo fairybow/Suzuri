@@ -62,7 +62,7 @@ private slots:
         QTest::newRow("two extensions") << u"a.tar.md"_s << Type::Text;
         QTest::newRow("in folders") << u"one/two/a.pdf"_s << Type::Pdf;
         QTest::newRow("dotted folder") << u"v1.0/a.txt"_s << Type::Text;
-        QTest::newRow("name outside ASCII") << u"é.txt"_s << Type::Text;
+        QTest::newRow("name outside ASCII") << u"\u00E9.txt"_s << Type::Text;
 
         // Anything not in the table is unsupported: text is never the
         // fallback
