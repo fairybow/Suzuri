@@ -315,6 +315,14 @@ The cost is that a moved vault is a new vault. The benefit is that a copied vaul
 
 Paths are compared as values, element by element, so slash direction and repeated slashes don't matter. A trailing slash, `.` and `..` segments, relative paths, letter case on Windows, and symlinks do. Paths from the folder picker and from the known-vaults list are already clean; command-line arguments are the one input that will need normalizing. `Coco::Path` is deliberately not canonical on construction: that would make it impossible to name a path that doesn't exist yet, and would put a filesystem call in a value type.
 
+**`Vault` takes only plain paths.** A plain path is a list of names: no `.` or `..` segment and no trailing slash (`Coco::Path::isPlain`). Because paths are compared as written, `<vault>/a/../..` reads as under the vault it climbs out of, and `a/./b` is a second key for the buffer at `a/b`. So every public `Vault` function that takes a path refuses one that isn't plain, and never normalizes it:
+
+- An absolute path must be plain and at or under the root. `Vault::contains` is that test, and creating, renaming, moving, and trashing all answer to it.
+- A vault-relative key must be non-empty, plain, and without a root (`/a` and, on Windows, `C:a` both replace part of the root when appended to it). `Vault::openModel` refuses anything else, which covers a path read from a hand-edited `workspace.json`.
+- A rename's new name must be a single name.
+
+`relativePathOf`, `absolutePathOf`, and `makeFileRef` only convert; a caller holding a path from outside checks `contains` first. The vault's own root is assumed plain.
+
 ## Configuration and persistence
 
 All of it is JSON, read and written by stateless free functions (`core/JsonIo.h` over `core/Io.h`, which writes atomically). A missing or unreadable file reads as an empty object, so callers fall to their defaults.

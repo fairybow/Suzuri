@@ -13,13 +13,14 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] Opening the file that is already in the active, unpinned tab should do nothing
 - [ ] Minor: dragging a file quickly from near its row's bottom edge moves the selection band (grey, blue left edge) down to the next row, though that row isn't selected
 - [ ] The "Options" heading in the settings dialog can be hovered or selected and probably shouldn't be
-- [ ] A path with a `..` segment passes `Vault::contains`, so `Vault::rename` and `Vault::move` can take an entry out of the vault, and `Vault::moveToTrash` would take `<vault>/folder/..` for something other than the root. Nothing in the UI can send such a path. `VaultTest` holds the rename and move cases, marked `QEXPECT_FAIL`
+- [x] A path with a `..` segment passed `Vault::contains`, so a rename or move could take an entry out of the vault, and `Vault::openModel` opened a `../` or absolute path from a hand-edited `workspace.json`. `Vault` now takes only plain paths (see "Identity" in [Architecture.md](Architecture.md))
 
 ## Rough edges
 
 - [ ] Tabs can be dragged past the left or right end of the tab bar without starting a drag; may want to clamp them
 - [ ] No auto-scroll while dragging a tab in an overflowing bar (close to impossible with Qt)
 - [ ] Under the "C" locale (a Linux session with no locale set), the file tree doesn't read a number in a name as a number: "chapter 10" sorts before "chapter 2"
+- [ ] A vault whose root path is not plain (a trailing separator, a `.` or `..` segment) contains nothing by `Vault::contains`, so every create, rename, move, and delete in it is refused. The folder picker and the known-vaults list give plain paths; a root from the command line will need cleaning first
 - [ ] On Windows, deleting a folder that a tree has listed, from outside Suzuri, logs Qt's "FindNextChangeNotification failed ... (Access is denied.)" once per watched folder. Harmless: the rows still go
 
 ## Before release
