@@ -57,7 +57,7 @@ class VaultTreeModelTest : public QObject
 private:
     // Longer than the model's wait before it handles folder changes, with
     // room for the watcher to report them
-    static constexpr int SETTLE_MS = 700;
+    static constexpr int SETTLE_MS_ = 700;
 
     // A folder of files, then a vault on it. Files are written by the make
     // functions before the vault exists; ones a test adds later are "outside"
@@ -65,7 +65,7 @@ private:
     //
     // The vault is made by start(), after the first files, and is destroyed
     // before the folder
-    struct Fixture
+    struct Fixture_
     {
         QTemporaryDir folder{};
         Coco::Path root{ folder.path() };
@@ -73,11 +73,11 @@ private:
         VaultTreeModel* model = nullptr;
         QAbstractItemModelTester* tester = nullptr;
 
-        Fixture() = default;
-        Fixture(const Fixture&) = delete;
-        Fixture& operator=(const Fixture&) = delete;
+        Fixture_() = default;
+        Fixture_(const Fixture_&) = delete;
+        Fixture_& operator=(const Fixture_&) = delete;
 
-        ~Fixture()
+        ~Fixture_()
         {
             delete tester;
             delete vault;
@@ -163,7 +163,7 @@ private slots:
     // number inside a name read as a number
     void rowsAreFoldersFirstThenByName()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"cherry.md"_s);
         f.makeFile(u"banana.txt"_s);
         f.makeFile(u"Apple.txt"_s);
@@ -188,7 +188,7 @@ private slots:
     // period in a folder's name isn't one
     void filesShowWithoutTheirExtension()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.tar.md"_s);
         f.makeFolder(u"Draft v1.0"_s);
@@ -204,7 +204,7 @@ private slots:
 
     void hiddenAndUnsupportedEntriesAreNotListed()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.docx"_s);
         f.makeFile(u"Makefile"_s);
@@ -221,7 +221,7 @@ private slots:
     // is still a folder
     void aFolderOfUnlistedFilesIsListedAndEmpty()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/a.docx"_s);
         f.start();
 
@@ -231,7 +231,7 @@ private slots:
 
     void anEmptyVaultHasNoRows()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.start();
 
         QCOMPARE(f.rows(), QStringList{});
@@ -241,7 +241,7 @@ private slots:
 
     void theInvalidIndexIsTheRoot()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.start();
 
         QCOMPARE(f.model->pathOf(QModelIndex{}), f.root);
@@ -251,7 +251,7 @@ private slots:
 
     void anIndexKnowsItsPathAndKind()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/two/a.txt"_s);
         f.start();
 
@@ -271,7 +271,7 @@ private slots:
 
     void indexOfIsInvalidForWhatIsNotShown()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.docx"_s);
         f.makeFile(u".git/c.txt"_s);
@@ -290,7 +290,7 @@ private slots:
 
     void nothingIsEditableAndFilesHaveNoChildren()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/a.txt"_s);
         f.start();
 
@@ -311,7 +311,7 @@ private slots:
     // in it. Until then it claims to have children, so its arrow shows
     void aFolderIsListedWhenFirstAskedFor()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/a.txt"_s);
         f.makeFolder(u"empty"_s);
         f.startWithoutTester();
@@ -354,7 +354,7 @@ private slots:
 
     void aCreatedFileAppearsInPlace()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"Apple.txt"_s);
         f.makeFile(u"zebra.txt"_s);
         f.start();
@@ -371,7 +371,7 @@ private slots:
 
     void aCreatedFolderAppearsAmongTheFolders()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"Apple.txt"_s);
         f.makeFolder(u"zeta"_s);
         f.start();
@@ -385,7 +385,7 @@ private slots:
 
     void aCreatedFileAppearsInAListedSubfolder()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/a.txt"_s);
         f.start();
         QCOMPARE(f.rows(u"one"_s), QStringList({ u"a"_s }));
@@ -399,7 +399,7 @@ private slots:
     // a folder's children expanded
     void aRenamedFileKeepsItsRowAndMovesToItsPlace()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"m.txt"_s);
         f.makeFile(u"z.txt"_s);
@@ -422,7 +422,7 @@ private slots:
     // A rename that leaves the row where it is moves nothing
     void aRenameThatKeepsItsPlaceOnlyChangesTheName()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"m.txt"_s);
         f.makeFile(u"z.txt"_s);
@@ -445,7 +445,7 @@ private slots:
     // want differ for a move up and a move down
     void aRenameToEitherEndOfTheList()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"b.txt"_s);
         f.makeFile(u"m.txt"_s);
         f.makeFile(u"y.txt"_s);
@@ -462,7 +462,7 @@ private slots:
     // comes along
     void aRenamedFolderKeepsItsListedChildren()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/two/a.txt"_s);
         f.makeFolder(u"zeta"_s);
         f.start();
@@ -485,7 +485,7 @@ private slots:
     // A rename to a name the tree doesn't show takes the row away
     void aRenameToAnUnshownNameRemovesTheRow()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.txt"_s);
         f.start();
@@ -500,7 +500,7 @@ private slots:
 
     void aMovedFileChangesParentAndKeepsItsRow()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"one/b.txt"_s);
         f.start();
@@ -522,7 +522,7 @@ private slots:
     // goes, and the folder lists it with the rest when first opened
     void aMoveIntoAnUnlistedFolderRemovesTheRow()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"one/b.txt"_s);
         f.startWithoutTester();
@@ -538,7 +538,7 @@ private slots:
 
     void aMovedFolderKeepsItsListedChildren()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/two/a.txt"_s);
         f.makeFolder(u"other"_s);
         f.start();
@@ -557,7 +557,7 @@ private slots:
     // A refused operation leaves the tree as it was
     void aRefusedRenameChangesNothing()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.txt"_s);
         f.start();
@@ -575,7 +575,7 @@ private slots:
     // What the vault calls after a file leaves disk
     void aRemovedEntryLeavesTheTree()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"one/two/b.txt"_s);
         f.start();
@@ -595,7 +595,7 @@ private slots:
 
     void anOutsideFileAppears()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.start();
 
@@ -608,7 +608,7 @@ private slots:
     // its selection and its open folders
     void anOutsideChangeKeepsTheOtherRows()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/a.txt"_s);
         f.makeFile(u"z.txt"_s);
         f.start();
@@ -631,7 +631,7 @@ private slots:
 
     void anOutsideDeleteRemovesTheRow()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"b.txt"_s);
         f.start();
@@ -643,7 +643,7 @@ private slots:
 
     void anOutsideRenameShowsAsTheNewName()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"m.txt"_s);
         f.start();
@@ -658,7 +658,7 @@ private slots:
 
     void anOutsideChangeInAListedSubfolderShows()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/two/a.txt"_s);
         f.start();
         QCOMPARE(f.rows(u"one/two"_s), QStringList({ u"a"_s }));
@@ -670,7 +670,7 @@ private slots:
 
     void anOutsideFolderDeleteRemovesItsRows()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"one/two/a.txt"_s);
         f.makeFile(u"z.txt"_s);
         f.start();
@@ -688,7 +688,7 @@ private slots:
 
     void anOutsideHiddenOrUnsupportedFileAddsNoRow()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.start();
 
@@ -696,7 +696,7 @@ private slots:
 
         f.makeFile(u".hidden.txt"_s);
         f.makeFile(u"b.docx"_s);
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         QCOMPARE(inserted.count(), 0);
         QCOMPARE(f.rows(), QStringList({ u"a"_s }));
@@ -706,7 +706,7 @@ private slots:
     // reports the same change. Taking that in a second time changes nothing
     void theWatchersReportOfOwnRenameChangesNothing()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFile(u"a.txt"_s);
         f.makeFile(u"m.txt"_s);
         f.start();
@@ -717,7 +717,7 @@ private slots:
         QSignalSpy inserted(f.model, &VaultTreeModel::rowsInserted);
         QSignalSpy removed(f.model, &VaultTreeModel::rowsRemoved);
 
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         QCOMPARE(inserted.count() + removed.count(), 0);
         QVERIFY(z.isValid());

@@ -45,10 +45,10 @@ class TextFileModelTest : public QObject
 private:
     // A view's document, set up as TextFileView sets its own up. Edits made
     // to it reach the model as a user's typing does
-    class ViewDocument
+    class ViewDocument_
     {
     public:
-        explicit ViewDocument(TextFileModel& model)
+        explicit ViewDocument_(TextFileModel& model)
         {
             document_.setDocumentLayout(
                 new QPlainTextDocumentLayout(&document_));
@@ -67,7 +67,7 @@ private:
     };
 
     // No vault is needed: the model only stores the reference
-    [[nodiscard]] static Suzuri::FileRef fileRef()
+    [[nodiscard]] static Suzuri::FileRef fileRef_()
     {
         return { nullptr, Coco::Path("a.txt") };
     }
@@ -129,7 +129,7 @@ private slots:
     {
         QFETCH(QByteArray, bytes);
 
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData(bytes);
 
         QCOMPARE(model.data(), bytes);
@@ -177,7 +177,7 @@ private slots:
         QFETCH(QByteArray, bytes);
         QFETCH(QByteArray, expected);
 
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData(bytes);
 
         QCOMPARE(model.data(), expected);
@@ -239,7 +239,7 @@ private slots:
 
     void editMarksModifiedAndAnnounces()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one\n");
 
         QSignalSpy content_changed(
@@ -249,7 +249,7 @@ private slots:
             &model,
             &Suzuri::AbstractFileModel::modificationChanged);
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         QCOMPARE(content_changed.count(), 0);
         QVERIFY(!model.isModified());
 
@@ -287,10 +287,10 @@ private slots:
         QFETCH(QByteArray, bytes);
         QFETCH(QByteArray, expected);
 
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData(bytes);
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         view.typeAtEnd(u"two\nthree"_s);
 
         QCOMPARE(model.data(), expected);
@@ -298,11 +298,11 @@ private slots:
 
     void undoAndRedoAnEdit()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one\n");
         QVERIFY(!model.isUndoAvailable());
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         view.typeAtEnd(u"two"_s);
         QVERIFY(model.isUndoAvailable());
 
@@ -321,10 +321,10 @@ private slots:
     // setData is the open path: nothing from before it can be undone
     void setDataClearsUndo()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one\n");
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         view.typeAtEnd(u"two"_s);
         QVERIFY(model.isUndoAvailable());
 
@@ -339,7 +339,7 @@ private slots:
     // again, and undo brings back what it held before
     void reloadIsUndoable()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one\n");
 
         model.reloadContent("two\n");
@@ -362,10 +362,10 @@ private slots:
     // A reload over unsaved typing loses nothing: undo restores the typing
     void reloadKeepsUnsavedEditsOnTheUndoStack()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one\n");
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         view.typeAtEnd(u"unsaved"_s);
 
         model.reloadContent("two\n");
@@ -381,10 +381,10 @@ private slots:
     // would write it over the external change
     void typingAfterAReloadUndoesOnItsOwn()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("one");
 
-        ViewDocument view(model);
+        ViewDocument_ view(model);
         model.reloadContent("two");
 
         view.typeAtEnd(u"!"_s);
@@ -402,7 +402,7 @@ private slots:
     // text only, so the restored text is saved in the adopted format
     void reloadAdoptsFormat()
     {
-        TextFileModel model(fileRef(), nullptr);
+        TextFileModel model(fileRef_(), nullptr);
         model.setData("a\nb\n");
 
         model.reloadContent("\xEF\xBB\xBF" "c\r\nd\r\n");

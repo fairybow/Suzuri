@@ -55,7 +55,7 @@ class PrimeDocumentTest : public QObject
 private:
     // A document's text as PrimeDocument reads it: nothing substituted, line
     // breaks as '\n'
-    [[nodiscard]] static QString textOf(const QTextDocument& document)
+    [[nodiscard]] static QString textOf_(const QTextDocument& document)
     {
         auto text = document.toRawText();
         text.replace(QChar::ParagraphSeparator, QChar(u'\n'));
@@ -63,7 +63,7 @@ private:
     }
 
     // A view's document, set up as TextFileView sets its own up
-    static void setUpView(QTextDocument& document, PrimeDocument& prime)
+    static void setUpView_(QTextDocument& document, PrimeDocument& prime)
     {
         document.setDocumentLayout(new QPlainTextDocumentLayout(&document));
         prime.registerView(&document);
@@ -71,13 +71,13 @@ private:
 
     // A prime holding some text, with two views on it. The views are declared
     // after the prime so they are destroyed first, as a view is in the app
-    struct Fixture
+    struct Fixture_
     {
-        explicit Fixture(const QString& text)
+        explicit Fixture_(const QString& text)
         {
             prime.setText(text);
-            setUpView(a, prime);
-            setUpView(b, prime);
+            setUpView_(a, prime);
+            setUpView_(b, prime);
         }
 
         PrimeDocument prime{ nullptr };
@@ -90,15 +90,15 @@ private:
 #define VERIFY_ALL_HOLD(fixture, expected)                                     \
     do {                                                                       \
         QCOMPARE((fixture).prime.text(), (expected));                          \
-        QCOMPARE(textOf((fixture).a), (expected));                             \
-        QCOMPARE(textOf((fixture).b), (expected));                             \
+        QCOMPARE(textOf_((fixture).a), (expected));                            \
+        QCOMPARE(textOf_((fixture).b), (expected));                            \
     } while (false)
 
-    [[nodiscard]] static QString noBreakSpace() { return QChar(0x00A0); }
-    [[nodiscard]] static QString lineSeparator() { return QChar(0x2028); }
+    [[nodiscard]] static QString noBreakSpace_() { return QChar(0x00A0); }
+    [[nodiscard]] static QString lineSeparator_() { return QChar(0x2028); }
 
     // Outside the BMP, so two UTF-16 code units and two cursor positions
-    [[nodiscard]] static QString emoji()
+    [[nodiscard]] static QString emoji_()
     {
         return QString::fromUcs4(U"\x1F4C1", 1);
     }
@@ -113,9 +113,9 @@ private slots:
 
         QTextDocument view{};
         view.setPlainText(u"something else"_s);
-        setUpView(view, prime);
+        setUpView_(view, prime);
 
-        QCOMPARE(textOf(view), u"one\ntwo"_s);
+        QCOMPARE(textOf_(view), u"one\ntwo"_s);
         QCOMPARE(prime.viewCount(), 1);
 
         // Seeding a view is not an edit
@@ -125,7 +125,7 @@ private slots:
     // Undo lives on the prime alone
     void registerViewDisablesTheViewsOwnUndo()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         QVERIFY(!f.a.isUndoRedoEnabled());
         QVERIFY(!f.b.isUndoRedoEnabled());
@@ -133,7 +133,7 @@ private slots:
 
     void registerViewTwiceCountsOnce()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
         f.prime.registerView(&f.a);
 
         QCOMPARE(f.prime.viewCount(), 2);
@@ -388,26 +388,26 @@ private slots:
         QTest::newRow("type a no-break space")
             << u"ab"_s << Edit([](QTextCursor& c) {
                    c.setPosition(1);
-                   c.insertText(noBreakSpace());
+                   c.insertText(noBreakSpace_());
                })
-            << u"a"_s + noBreakSpace() + u"b"_s;
+            << u"a"_s + noBreakSpace_() + u"b"_s;
 
         QTest::newRow("type a line separator")
             << u"ab"_s << Edit([](QTextCursor& c) {
                    c.setPosition(1);
-                   c.insertText(lineSeparator());
+                   c.insertText(lineSeparator_());
                })
-            << u"a"_s + lineSeparator() + u"b"_s;
+            << u"a"_s + lineSeparator_() + u"b"_s;
 
         QTest::newRow("type an emoji")
             << u"ab"_s << Edit([](QTextCursor& c) {
                    c.setPosition(1);
-                   c.insertText(emoji());
+                   c.insertText(emoji_());
                })
-            << u"a"_s + emoji() + u"b"_s;
+            << u"a"_s + emoji_() + u"b"_s;
 
         QTest::newRow("Backspace over an emoji")
-            << u"a"_s + emoji() + u"b"_s << Edit([](QTextCursor& c) {
+            << u"a"_s + emoji_() + u"b"_s << Edit([](QTextCursor& c) {
                    c.setPosition(3);
                    c.deletePreviousChar();
                })
@@ -420,7 +420,7 @@ private slots:
         QFETCH(Edit, edit);
         QFETCH(QString, expected);
 
-        Fixture f(initial);
+        Fixture_ f(initial);
 
         QTextCursor cursor(&f.a);
         edit(cursor);
@@ -444,7 +444,7 @@ private slots:
 
     void editsFromTwoViewsInterleave()
     {
-        Fixture f(u"one\ntwo"_s);
+        Fixture_ f(u"one\ntwo"_s);
 
         QTextCursor in_a(&f.a);
         QTextCursor in_b(&f.b);
@@ -475,24 +475,24 @@ private slots:
 
     void threeViewsStayInStep()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         QTextDocument c{};
-        setUpView(c, f.prime);
+        setUpView_(c, f.prime);
 
         QTextCursor cursor(&c);
         cursor.movePosition(QTextCursor::End);
         cursor.insertText(u"\ntwo"_s);
 
         VERIFY_ALL_HOLD(f, u"one\ntwo"_s);
-        QCOMPARE(textOf(c), u"one\ntwo"_s);
+        QCOMPARE(textOf_(c), u"one\ntwo"_s);
     }
 
     // --- Undo and redo ------------------------------------------------------
 
     void undoWithNothingToUndoChangesNothing()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         f.prime.undo();
         f.prime.redo();
@@ -504,7 +504,7 @@ private slots:
     // where the change was
     void undoAndRedoHintWhereTheChangeWas()
     {
-        Fixture f(u"one two"_s);
+        Fixture_ f(u"one two"_s);
 
         QTextCursor cursor(&f.a);
         cursor.setPosition(3);
@@ -525,7 +525,7 @@ private slots:
 
     void compoundEditUndoesAsOneStep()
     {
-        Fixture f(u"one\ntwo\nthree"_s);
+        Fixture_ f(u"one\ntwo\nthree"_s);
 
         f.prime.beginCompoundEdit();
 
@@ -547,7 +547,7 @@ private slots:
 
     void endCompoundEditWithoutBeginIsHarmless()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         f.prime.endCompoundEdit();
 
@@ -558,7 +558,7 @@ private slots:
 
     void setTextReachesEveryViewAndClearsUndo()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         QTextCursor cursor(&f.a);
         cursor.insertText(u"X"_s);
@@ -572,7 +572,7 @@ private slots:
 
     void replaceAllUndoableReachesEveryViewAndUndoes()
     {
-        Fixture f(u"one\ntwo"_s);
+        Fixture_ f(u"one\ntwo"_s);
 
         f.prime.replaceAllUndoable(u"three\nfour\nfive"_s);
         VERIFY_ALL_HOLD(f, u"three\nfour\nfive"_s);
@@ -586,7 +586,7 @@ private slots:
 
     void replaceAllUndoableWithEmptyText()
     {
-        Fixture f(u"one\ntwo"_s);
+        Fixture_ f(u"one\ntwo"_s);
 
         f.prime.replaceAllUndoable(u""_s);
         VERIFY_ALL_HOLD(f, u""_s);
@@ -597,7 +597,7 @@ private slots:
 
     void replaceAllUndoableOnAnEmptyDocument()
     {
-        Fixture f(u""_s);
+        Fixture_ f(u""_s);
 
         f.prime.replaceAllUndoable(u"one\ntwo"_s);
         VERIFY_ALL_HOLD(f, u"one\ntwo"_s);
@@ -617,7 +617,7 @@ private slots:
     // back both
     void editAfterReplaceAllUndoable()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         f.prime.replaceAllUndoable(u"two"_s);
         f.prime.setModified(false);
@@ -637,7 +637,7 @@ private slots:
     // insertText puts its text at the start of the document
     void insertTextReachesEveryView()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         f.prime.insertText(u"A\nB"_s);
         VERIFY_ALL_HOLD(f, u"A\nBone"_s);
@@ -650,11 +650,11 @@ private slots:
 
     void aDestroyedViewIsDropped()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         {
             QTextDocument c{};
-            setUpView(c, f.prime);
+            setUpView_(c, f.prime);
             QCOMPARE(f.prime.viewCount(), 3);
         }
 
@@ -674,7 +674,7 @@ private slots:
 
         {
             QTextDocument view{};
-            setUpView(view, prime);
+            setUpView_(view, prime);
 
             QTextCursor cursor(&view);
             cursor.insertText(u"X"_s);
@@ -689,7 +689,7 @@ private slots:
 
     void anUnregisteredViewNoLongerTakesPart()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
 
         f.prime.unregisterView(&f.b);
         QCOMPARE(f.prime.viewCount(), 1);
@@ -699,22 +699,22 @@ private slots:
         in_a.insertText(u"X"_s);
 
         QCOMPARE(f.prime.text(), u"Xone"_s);
-        QCOMPARE(textOf(f.a), u"Xone"_s);
-        QCOMPARE(textOf(f.b), u"one"_s);
+        QCOMPARE(textOf_(f.a), u"Xone"_s);
+        QCOMPARE(textOf_(f.b), u"one"_s);
 
         // And an edit made in it reaches nothing
         QTextCursor in_b(&f.b);
         in_b.insertText(u"Y"_s);
 
         QCOMPARE(f.prime.text(), u"Xone"_s);
-        QCOMPARE(textOf(f.a), u"Xone"_s);
+        QCOMPARE(textOf_(f.a), u"Xone"_s);
     }
 
     // --- Signals ------------------------------------------------------------
 
     void signalsFollowAnEditAndItsUndo()
     {
-        Fixture f(u"one"_s);
+        Fixture_ f(u"one"_s);
         f.prime.setModified(false);
 
         QSignalSpy contents(&f.prime, &PrimeDocument::contentsChange);

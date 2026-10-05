@@ -44,7 +44,7 @@ using Suzuri::Vault;
 //
 // Something expected to happen is waited for with QTRY_COMPARE and
 // QTRY_VERIFY, which return as soon as it does and fail after five seconds.
-// Something expected NOT to happen is given SETTLE_MS, and then checked. A
+// Something expected NOT to happen is given SETTLE_MS_, and then checked. A
 // slow machine can only make the second kind pass when it shouldn't, never
 // fail when it shouldn't.
 //
@@ -59,16 +59,16 @@ class VaultTimedTest : public QObject
 private:
     // Longer than the vault's wait before it handles file changes, with room
     // for the watcher to report them
-    static constexpr int SETTLE_MS = 700;
+    static constexpr int SETTLE_MS_ = 700;
 
     // Far enough off that the timer it is given to can't fire during a test
-    static constexpr int NEVER_MS = 60 * 60 * 1000;
+    static constexpr int NEVER_MS_ = 60 * 60 * 1000;
 
     // A vault in a temporary folder, and the file work a test does around it.
     // Paths given to these functions are relative to the vault's root.
     //
     // The vault is declared after the folder so it is destroyed first
-    struct Fixture
+    struct Fixture_
     {
         QTemporaryDir folder{};
         Coco::Path root{ folder.path() };
@@ -120,7 +120,7 @@ private:
     };
 
     // Types at the end of a text buffer, as a view's editor would
-    static void type(AbstractFileModel* model, const QString& text)
+    static void type_(AbstractFileModel* model, const QString& text)
     {
         auto* text_model = qobject_cast<TextFileModel*>(model);
         QVERIFY(text_model);
@@ -134,7 +134,7 @@ private:
         cursor.insertText(text);
     }
 
-    [[nodiscard]] static QByteArray pngBytes(Qt::GlobalColor color)
+    [[nodiscard]] static QByteArray pngBytes_(Qt::GlobalColor color)
     {
         QImage image(2, 2, QImage::Format_RGB32);
         image.fill(color);
@@ -153,14 +153,14 @@ private slots:
     // The debounce: a save follows a pause in typing
     void typingIsSavedAfterAPause()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "hello");
-        f.vault.setAutosaveTiming(100, NEVER_MS);
+        f.vault.setAutosaveTiming(100, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         // Not at once
         QCOMPARE(f.read(u"a.txt"_s), QByteArray("hello"));
@@ -173,14 +173,14 @@ private slots:
     // debounce is set out of reach, so only the ceiling can have saved
     void typingIsSavedWithoutAPause()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "hello");
-        f.vault.setAutosaveTiming(NEVER_MS, 300);
+        f.vault.setAutosaveTiming(NEVER_MS_, 300);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         QTRY_COMPARE(f.read(u"a.txt"_s), QByteArray("hello!"));
         QVERIFY(!model->isModified());
@@ -189,17 +189,17 @@ private slots:
     // The ceiling starts again with the next burst of typing
     void theNextBurstOfTypingIsSavedToo()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "hello");
-        f.vault.setAutosaveTiming(NEVER_MS, 200);
+        f.vault.setAutosaveTiming(NEVER_MS_, 200);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
         QTRY_COMPARE(f.read(u"a.txt"_s), QByteArray("hello!"));
 
-        type(model, u"?"_s);
+        type_(model, u"?"_s);
         QTRY_COMPARE(f.read(u"a.txt"_s), QByteArray("hello!?"));
     }
 
@@ -207,17 +207,17 @@ private slots:
     // modified buffer
     void oneSaveWritesEveryModifiedBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "a");
         f.replace(u"one/b.txt"_s, "b");
-        f.vault.setAutosaveTiming(100, NEVER_MS);
+        f.vault.setAutosaveTiming(100, NEVER_MS_);
 
         auto* a = f.open(u"a.txt"_s);
         auto* b = f.open(u"one/b.txt"_s);
         QVERIFY(a && b);
 
-        type(a, u"!"_s);
-        type(b, u"?"_s);
+        type_(a, u"!"_s);
+        type_(b, u"?"_s);
 
         QTRY_COMPARE(f.read(u"a.txt"_s), QByteArray("a!"));
         QTRY_COMPARE(f.read(u"one/b.txt"_s), QByteArray("b?"));
@@ -237,7 +237,7 @@ private slots:
     {
         QFETCH(bool, byReplacing);
 
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -265,7 +265,7 @@ private slots:
     // it again, the first outside change would be the last one seen
     void aSecondOutsideChangeIsTakenInToo()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -283,13 +283,13 @@ private slots:
     // The outside change wins, and the typing it replaced is one undo away
     void anOutsideChangeOverUnsavedTypingCanBeUndone()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(NEVER_MS, NEVER_MS);
+        f.vault.setAutosaveTiming(NEVER_MS_, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
-        type(model, u"unsaved"_s);
+        type_(model, u"unsaved"_s);
 
         f.replace(u"a.txt"_s, "two\n");
         QTRY_COMPARE(model->data(), QByteArray("two\n"));
@@ -302,7 +302,7 @@ private slots:
     // not a reload
     void anOutsideChangeToTheSameBytesIsIgnored()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -310,7 +310,7 @@ private slots:
         QSignalSpy reloaded(model, &AbstractFileModel::reloaded);
 
         f.replace(u"a.txt"_s, "one\n");
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         QCOMPARE(reloaded.count(), 0);
         QVERIFY(!model->isUndoAvailable());
@@ -318,16 +318,16 @@ private slots:
 
     void anOutsideChangeToAnImageIsTakenIn()
     {
-        Fixture f{};
-        f.replace(u"a.png"_s, pngBytes(Qt::red));
+        Fixture_ f{};
+        f.replace(u"a.png"_s, pngBytes_(Qt::red));
         auto* model = f.open(u"a.png"_s);
         QVERIFY(model);
 
         QSignalSpy reloaded(model, &AbstractFileModel::reloaded);
 
-        f.replace(u"a.png"_s, pngBytes(Qt::blue));
+        f.replace(u"a.png"_s, pngBytes_(Qt::blue));
 
-        QTRY_COMPARE(model->data(), pngBytes(Qt::blue));
+        QTRY_COMPARE(model->data(), pngBytes_(Qt::blue));
         QTRY_COMPARE(reloaded.count(), 1);
     }
 
@@ -338,22 +338,22 @@ private slots:
     // would put the saved text back over it
     void ownSaveIsNotTakenForAnOutsideChange()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(NEVER_MS, NEVER_MS);
+        f.vault.setAutosaveTiming(NEVER_MS_, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
         QSignalSpy reloaded(model, &AbstractFileModel::reloaded);
 
-        type(model, u"two"_s);
+        type_(model, u"two"_s);
         QVERIFY(f.vault.flush().isEmpty());
 
         // The buffer moves on before the watcher has reported the save
-        type(model, u" three"_s);
+        type_(model, u" three"_s);
 
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         QCOMPARE(reloaded.count(), 0);
         QCOMPARE(model->data(), QByteArray("one\ntwo three"));
@@ -369,21 +369,21 @@ private slots:
     // and the later typing would be lost
     void bytesTheVaultLastSavedAreNeverTakenIn()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(NEVER_MS, NEVER_MS);
+        f.vault.setAutosaveTiming(NEVER_MS_, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
         QSignalSpy reloaded(model, &AbstractFileModel::reloaded);
 
-        type(model, u"two"_s);
+        type_(model, u"two"_s);
         QVERIFY(f.vault.flush().isEmpty());
-        type(model, u" three"_s);
+        type_(model, u" three"_s);
 
         f.replace(u"a.txt"_s, "one\ntwo");
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         QCOMPARE(reloaded.count(), 0);
         QCOMPARE(model->data(), QByteArray("one\ntwo three"));
@@ -393,16 +393,16 @@ private slots:
     // After its own save the vault still sees a real outside change
     void anOutsideChangeAfterOwnSaveIsTakenIn()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(NEVER_MS, NEVER_MS);
+        f.vault.setAutosaveTiming(NEVER_MS_, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u"two"_s);
+        type_(model, u"two"_s);
         QVERIFY(f.vault.flush().isEmpty());
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
 
         f.replace(u"a.txt"_s, "outside\n");
 
@@ -413,7 +413,7 @@ private slots:
 
     void anOutsideDeleteClosesTheBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -433,22 +433,22 @@ private slots:
     // Unsaved typing doesn't bring the file back
     void anOutsideDeleteIsNotUndoneByUnsavedTyping()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(100, NEVER_MS);
+        f.vault.setAutosaveTiming(100, NEVER_MS_);
 
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
         QSignalSpy removed(model, &AbstractFileModel::removedFromDisk);
 
-        type(model, u"unsaved"_s);
+        type_(model, u"unsaved"_s);
         QVERIFY(QFile::remove(f.folder.filePath(u"a.txt"_s)));
 
         QTRY_COMPARE(removed.count(), 1);
 
         // Past when the autosave would have run
-        QTest::qWait(SETTLE_MS);
+        QTest::qWait(SETTLE_MS_);
         QVERIFY(!f.exists(u"a.txt"_s));
     }
 
@@ -456,16 +456,16 @@ private slots:
     // save notices the file is gone, and closes the buffer the same way
     void anOutsideFolderDeleteClosesTheBuffersInside()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.replace(u"one/two/a.txt"_s, "one\n");
-        f.vault.setAutosaveTiming(NEVER_MS, NEVER_MS);
+        f.vault.setAutosaveTiming(NEVER_MS_, NEVER_MS_);
 
         auto* model = f.open(u"one/two/a.txt"_s);
         QVERIFY(model);
 
         QSignalSpy removed(model, &AbstractFileModel::removedFromDisk);
 
-        type(model, u"unsaved"_s);
+        type_(model, u"unsaved"_s);
         QVERIFY(QDir(f.folder.filePath(u"one"_s)).removeRecursively());
 
         QVERIFY(f.vault.flush().isEmpty());

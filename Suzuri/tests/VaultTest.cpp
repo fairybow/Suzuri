@@ -57,7 +57,7 @@ private:
     // Paths given to these functions are relative to the vault's root.
     //
     // The vault is declared after the folder so it is destroyed first
-    struct Fixture
+    struct Fixture_
     {
         QTemporaryDir folder{};
         Coco::Path root{ folder.path() };
@@ -133,7 +133,7 @@ private:
     };
 
     // Types at the end of a text buffer, as a view's editor would
-    static void type(AbstractFileModel* model, const QString& text)
+    static void type_(AbstractFileModel* model, const QString& text)
     {
         auto* text_model = qobject_cast<TextFileModel*>(model);
         QVERIFY(text_model);
@@ -147,7 +147,7 @@ private:
         cursor.insertText(text);
     }
 
-    [[nodiscard]] static QByteArray pngBytes()
+    [[nodiscard]] static QByteArray pngBytes_()
     {
         QImage image(2, 2, QImage::Format_RGB32);
         image.fill(Qt::red);
@@ -165,7 +165,7 @@ private slots:
 
     void containsIsByFolderNotByPrefix()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QVERIFY(f.vault.contains(f.root));
         QVERIFY(f.vault.contains(f.absolute(u"a.txt"_s)));
@@ -178,7 +178,7 @@ private slots:
 
     void relativeAndAbsoluteAreInverses()
     {
-        Fixture f{};
+        Fixture_ f{};
         auto absolute = f.absolute(u"one/a.txt"_s);
 
         QCOMPARE(f.vault.relativePathOf(absolute), Coco::Path("one/a.txt"));
@@ -192,7 +192,7 @@ private slots:
     // The vault's own folder is made with the vault
     void constructionMakesTheDotFolder()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QVERIFY(QFileInfo(f.folder.filePath(u".suzuri"_s)).isDir());
     }
@@ -200,7 +200,7 @@ private slots:
     // What the vault lists is what it will open, and nothing hidden
     void visibleFilesLeavesOutHiddenAndUnsupported()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "a");
         f.write(u"one/b.md"_s, "b");
         f.write(u"one/two/c.pdf"_s, "c");
@@ -226,7 +226,7 @@ private slots:
 
     void openGivesABufferHoldingTheFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/a.txt"_s, "hello\n");
 
         auto* model = f.open(u"one/a.txt"_s);
@@ -241,7 +241,7 @@ private slots:
 
     void openTheSameFileTwiceGivesOneBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello\n");
 
         auto* first = f.open(u"a.txt"_s);
@@ -253,11 +253,11 @@ private slots:
 
     void openGivesEachTypeItsOwnKindOfBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "text");
         f.write(u"a.md"_s, "text");
         f.write(u"a.fountain"_s, "text");
-        f.write(u"a.png"_s, pngBytes());
+        f.write(u"a.png"_s, pngBytes_());
         f.write(u"a.pdf"_s, "%PDF-1.4\n");
 
         QVERIFY(qobject_cast<TextFileModel*>(f.open(u"a.txt"_s)));
@@ -267,7 +267,7 @@ private slots:
         auto* image = f.open(u"a.png"_s);
         QVERIFY(qobject_cast<Suzuri::ImageFileModel*>(image));
         QVERIFY(!image->isUserEditable());
-        QCOMPARE(image->data(), pngBytes());
+        QCOMPARE(image->data(), pngBytes_());
 
         auto* pdf = f.open(u"a.pdf"_s);
         QVERIFY(qobject_cast<Suzuri::PdfFileModel*>(pdf));
@@ -277,7 +277,7 @@ private slots:
 
     void openRefusesAnUnsupportedType()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.docx"_s, "text");
         f.write(u"Makefile"_s, "text");
 
@@ -289,7 +289,7 @@ private slots:
     // keystroke
     void openRefusesAMissingFile()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QVERIFY(!f.open(u"gone.txt"_s));
         QVERIFY(!f.exists(u"gone.txt"_s));
@@ -297,7 +297,7 @@ private slots:
 
     void openAnEmptyFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "");
 
         auto* model = f.open(u"a.txt"_s);
@@ -310,7 +310,7 @@ private slots:
 
     void openAsksAboutInvalidUtf8AndRefusesOnNo()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "caf\xE9");
 
         auto asked = 0;
@@ -339,7 +339,7 @@ private slots:
     // never needs asking about again
     void openRewritesInvalidUtf8OnYes()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "caf\xE9");
 
         auto asked = 0;
@@ -363,7 +363,7 @@ private slots:
     // Only text is asked about: other types are never decoded
     void openNeverAsksAboutAnImage()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.png"_s, "\xFF\xFE not an image");
 
         QVERIFY(f.open(u"a.png"_s));
@@ -373,7 +373,7 @@ private slots:
 
     void createFileNamesAreUnique()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QCOMPARE(f.vault.createFile(f.root), Coco::Path("Untitled.txt"));
         QCOMPARE(f.vault.createFile(f.root), Coco::Path("Untitled 1.txt"));
@@ -387,7 +387,7 @@ private slots:
 
     void createFolderNamesAreUnique()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QCOMPARE(f.vault.createFolder(f.root), Coco::Path("Untitled"));
         QCOMPARE(f.vault.createFolder(f.root), Coco::Path("Untitled 1"));
@@ -398,7 +398,7 @@ private slots:
 
     void createInsideAFolder()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.makeFolder(u"one"_s);
 
         QCOMPARE(
@@ -412,7 +412,7 @@ private slots:
     // A new file can be opened at once
     void createdFileOpens()
     {
-        Fixture f{};
+        Fixture_ f{};
         auto relative = f.vault.createFile(f.root);
 
         auto* model = f.open(relative.toQString());
@@ -424,7 +424,7 @@ private slots:
     // A folder that has gone stays gone
     void createInAMissingFolderFailsAndMakesNothing()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QVERIFY(f.vault.createFile(f.absolute(u"gone"_s)).isEmpty());
         QVERIFY(f.vault.createFolder(f.absolute(u"gone"_s)).isEmpty());
@@ -435,7 +435,7 @@ private slots:
 
     void renameAFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
 
         auto renamed = f.vault.rename(f.absolute(u"a.txt"_s), u"b.txt"_s);
@@ -448,7 +448,7 @@ private slots:
     // The buffer follows its file: same buffer, new identity
     void renameAnOpenFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -468,13 +468,13 @@ private slots:
     // name isn't written back
     void renamedOpenFileSavesToItsNewName()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
         f.vault.rename(f.absolute(u"a.txt"_s), u"b.txt"_s);
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         QVERIFY(f.vault.flush().isEmpty());
         QCOMPARE(f.read(u"b.txt"_s), QByteArray("hello!"));
@@ -485,11 +485,11 @@ private slots:
     // disk, and the buffer still holds the typing to save
     void renameKeepsUnsavedTyping()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         f.vault.rename(f.absolute(u"a.txt"_s), u"b.txt"_s);
 
@@ -503,7 +503,7 @@ private slots:
     // Every open buffer under a renamed folder follows it
     void renameAFolderWithOpenFilesInside()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/a.txt"_s, "a");
         f.write(u"one/two/b.txt"_s, "b");
         f.write(u"other.txt"_s, "c");
@@ -529,7 +529,7 @@ private slots:
     // A folder whose name only starts like the renamed one is left alone
     void renameAFolderLeavesItsNamesakeAlone()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/a.txt"_s, "a");
         f.write(u"one more/b.txt"_s, "b");
 
@@ -544,7 +544,7 @@ private slots:
 
     void renameChangingOnlyLetterCase()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/a.txt"_s, "hello");
         auto* model = f.open(u"one/a.txt"_s);
         QVERIFY(model);
@@ -559,7 +559,7 @@ private slots:
 
     void renameOntoATakenNameFailsAndChangesNothing()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "a");
         f.write(u"b.txt"_s, "b");
         auto* model = f.open(u"a.txt"_s);
@@ -575,7 +575,7 @@ private slots:
 
     void renameAMissingEntryFails()
     {
-        Fixture f{};
+        Fixture_ f{};
 
         QVERIFY(
             f.vault.rename(f.absolute(u"gone.txt"_s), u"b.txt"_s).isEmpty());
@@ -597,7 +597,7 @@ private slots:
 
     void renameCannotLeaveTheVault()
     {
-        Fixture f{};
+        Fixture_ f{};
         auto escapee = QFileInfo(f.folder.path()).fileName() + u"-out.txt"_s;
         auto outside = QFileInfo(f.folder.path()).dir().filePath(escapee);
         f.write(u"one/a.txt"_s, "hello");
@@ -614,7 +614,7 @@ private slots:
 
     void moveCannotLeaveTheVault()
     {
-        Fixture f{};
+        Fixture_ f{};
         auto escapee = QFileInfo(f.folder.path()).fileName() + u"-out.txt"_s;
         auto outside = QFileInfo(f.folder.path()).dir().filePath(escapee);
         f.write(u"one/"_s + escapee, "hello");
@@ -635,7 +635,7 @@ private slots:
 
     void moveAFileIntoAFolder()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         f.makeFolder(u"one"_s);
         auto* model = f.open(u"a.txt"_s);
@@ -653,7 +653,7 @@ private slots:
 
     void moveAFileToTheRoot()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/a.txt"_s, "hello");
 
         auto moved = f.vault.move(f.absolute(u"one/a.txt"_s), f.root);
@@ -664,7 +664,7 @@ private slots:
 
     void moveAFolderWithOpenFilesInside()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/two/a.txt"_s, "hello");
         f.makeFolder(u"other"_s);
         auto* model = f.open(u"one/two/a.txt"_s);
@@ -681,7 +681,7 @@ private slots:
 
     void moveAFolderIntoItselfIsRefused()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/two/a.txt"_s, "hello");
 
         QVERIFY(
@@ -695,7 +695,7 @@ private slots:
 
     void moveOntoATakenNameIsRefused()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "top");
         f.write(u"one/a.txt"_s, "inner");
 
@@ -709,7 +709,7 @@ private slots:
 
     void moveIntoSomethingThatIsNotAFolderIsRefused()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "a");
         f.write(u"b.txt"_s, "b");
 
@@ -725,7 +725,7 @@ private slots:
 
     void moveAcrossTheVaultsEdgeIsRefused()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "inside");
 
         QTemporaryDir elsewhere{};
@@ -754,12 +754,12 @@ private slots:
 
     void flushWritesAnEdit()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u" world"_s);
+        type_(model, u" world"_s);
         QVERIFY(model->isModified());
         QCOMPARE(f.read(u"a.txt"_s), QByteArray("hello"));
 
@@ -771,12 +771,12 @@ private slots:
 
     void flushKeepsTheFilesLineEndingAndMark()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "\xEF\xBB\xBFone\r\n");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        type(model, u"two\nthree"_s);
+        type_(model, u"two\nthree"_s);
         QVERIFY(f.vault.flush().isEmpty());
 
         QCOMPARE(
@@ -788,7 +788,7 @@ private slots:
     // wrote would put the buffer's text back
     void flushWritesNothingForAnUnmodifiedBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -802,14 +802,14 @@ private slots:
 
     void flushWritesOnlyTheModifiedBuffers()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "a");
         f.write(u"b.txt"_s, "b");
         auto* a = f.open(u"a.txt"_s);
         auto* b = f.open(u"b.txt"_s);
         QVERIFY(a && b);
 
-        type(a, u"!"_s);
+        type_(a, u"!"_s);
         f.write(u"b.txt"_s, "changed outside");
 
         QVERIFY(f.vault.flush().isEmpty());
@@ -822,11 +822,11 @@ private slots:
     // back, and that isn't reported as a failed save
     void flushDoesNotRecreateADeletedFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         QVERIFY(QFile::remove(f.folder.filePath(u"a.txt"_s)));
 
@@ -837,11 +837,11 @@ private slots:
     // Nor is a deleted folder rebuilt around it
     void flushDoesNotRecreateADeletedFolder()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"one/two/a.txt"_s, "hello");
         auto* model = f.open(u"one/two/a.txt"_s);
         QVERIFY(model);
-        type(model, u"!"_s);
+        type_(model, u"!"_s);
 
         QVERIFY(QDir(f.folder.filePath(u"one"_s)).removeRecursively());
 
@@ -855,7 +855,7 @@ private slots:
     // and watches for each one's destruction
     void closingTheLastViewSavesAndFreesTheBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -865,7 +865,7 @@ private slots:
         {
             QObject view{};
             model->addView(&view);
-            type(model, u"!"_s);
+            type_(model, u"!"_s);
         }
 
         // Saved at once, freed a moment later
@@ -881,7 +881,7 @@ private slots:
 
     void closingOneOfTwoViewsKeepsTheBuffer()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -892,7 +892,7 @@ private slots:
         {
             QObject second{};
             model->addView(&second);
-            type(model, u"!"_s);
+            type_(model, u"!"_s);
         }
 
         // Nothing is saved or freed while a view remains
@@ -905,7 +905,7 @@ private slots:
     // view closing writes nothing
     void closingTheLastViewDoesNotRecreateADeletedFile()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
@@ -913,7 +913,7 @@ private slots:
         {
             QObject view{};
             model->addView(&view);
-            type(model, u"!"_s);
+            type_(model, u"!"_s);
 
             QVERIFY(QFile::remove(f.folder.filePath(u"a.txt"_s)));
         }
@@ -961,7 +961,7 @@ private slots:
     // Each of these is refused before the system trash is asked for anything
     void moveToTrashRefusals()
     {
-        Fixture f{};
+        Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
 
         QTemporaryDir elsewhere{};
