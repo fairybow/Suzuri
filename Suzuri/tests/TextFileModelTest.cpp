@@ -375,6 +375,29 @@ private slots:
         QCOMPARE(model.data(), QByteArray("one\nunsaved"));
     }
 
+    // Typing after a reload undoes on its own, leaving the reload in place,
+    // even at the end of the reloaded text, where the typing touches it. One
+    // undo taking back both would put the old text back, and the next save
+    // would write it over the external change
+    void typingAfterAReloadUndoesOnItsOwn()
+    {
+        TextFileModel model(fileRef(), nullptr);
+        model.setData("one");
+
+        ViewDocument view(model);
+        model.reloadContent("two");
+
+        view.typeAtEnd(u"!"_s);
+        QCOMPARE(model.data(), QByteArray("two!"));
+
+        model.undo();
+        QCOMPARE(model.data(), QByteArray("two"));
+        QVERIFY(model.isUndoAvailable());
+
+        model.undo();
+        QCOMPARE(model.data(), QByteArray("one"));
+    }
+
     // A reload adopts the new bytes' line ending and BOM. Undo restores the
     // text only, so the restored text is saved in the adopted format
     void reloadAdoptsFormat()

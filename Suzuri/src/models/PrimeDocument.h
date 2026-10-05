@@ -150,7 +150,8 @@ public:
     // restores the prior buffer and the next autosave rewrites it. Leaves the
     // document MODIFIED — it is a real edit; the caller
     // (TextFileModel::reloadContent) clears the flag, since the new content
-    // matches disk
+    // matches disk. Clearing it is also what stops the next typed text from
+    // joining this step (see TextFileModel::reloadContent)
     void replaceAllUndoable(const QString& text)
     {
         replayPrimeOperation_([this, &text] {

@@ -87,5 +87,6 @@ function(app_add_test name)
 endfunction()
 
 app_add_test(FileTypesTest)
+app_add_test(PrimeDocumentTest)
 app_add_test(TextCountsTest)
 app_add_test(TextFileModelTest)
