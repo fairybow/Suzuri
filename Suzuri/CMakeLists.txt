@@ -402,3 +402,14 @@ if(UNIX AND NOT APPLE)
         )
     endforeach()
 endif()
+
+# =============================================================================
+# Tests
+# =============================================================================
+
+option(APP_BUILD_TESTS "Build the tests in tests/" ON)
+
+if(APP_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

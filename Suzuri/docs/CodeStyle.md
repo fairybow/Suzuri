@@ -13,7 +13,7 @@ Formatting is handled by `.clang-format` (run `wintools/ClangFormatAll.bat`): 80
 
 ## Files
 
-- Code is header-only, apart from `Main.cpp`. A header is named for the main class it holds.
+- Code is header-only, apart from `Main.cpp` and the tests (see [Tests](#tests)). A header is named for the main class it holds.
 - Every file starts with the license statement (`wintools/ApplyLicenseStatement.bat`).
 - A file goes in the folder of the feature it belongs to; "Source layout" in [Architecture.md](Architecture.md) lists the folders. A control that knows nothing of the app goes in `ui/widgets/`. Something only views use goes in `views/`.
 - Includes run one way, as that section sets out: nothing in `core/` or `models/` includes `views/` or `ui/`, and `views/` takes only `ui/widgets/` from `ui/`.
@@ -68,6 +68,23 @@ Formatting is handled by `.clang-format` (run `wintools/ClangFormatAll.bat`): 80
 ## Namespaces
 
 - One blank line after a namespace opens and one before it closes.
+
+## Tests
+
+Tests are Qt Test, in `Suzuri/tests/`. The `APP_BUILD_TESTS` CMake option builds them and CTest runs them.
+
+- One `.cpp` per test class, named for the class (`VaultTest.cpp`) and built as its own executable. Register it with `app_add_test` in `tests/CMakeLists.txt`.
+- A test of a class with `Q_OBJECT` needs that class's header, and the header of each `QObject` base class, listed in `AppTestMocs` in the same file. A missing one shows as a link error naming the class's `staticMetaObject`.
+- **Test functions go under `private slots:` and take no trailing underscore.** Qt Test finds its tests by looking for private slots, pairs each with its `_data` function by name, and prints the names in its results. These are the only exceptions to the rules above, and only in test files.
+- Test through the public API. No `friend` declarations, and no hook added to the app's code for a test to use.
+- Name a test for the behavior it checks, as a statement: `flushDoesNotRecreateADeletedFile`.
+- Each test builds what it needs and shares nothing with the others, so they run in any order. Files go in a `QTemporaryDir`.
+- Write text outside ASCII as escapes (`u"\u00E9"`, `"\xC3\xA9"`), never as the characters themselves, so a case doesn't depend on how a compiler or an editor reads the file.
+- For something that should happen later, wait with `QTRY_COMPARE` or `QTRY_VERIFY`, never a fixed sleep. For something that should not happen, wait a fixed time and then check. A slow machine can then only make a test pass when it shouldn't, never fail when it shouldn't.
+- Keep tests that wait on a timer or the file watcher apart from tests that don't (`VaultTimedTest.cpp` beside `VaultTest.cpp`).
+- A test asserts what the code's comments and the docs promise. When one fails, decide which of the two is wrong before changing either.
+- A known bug gets a test marked `QEXPECT_FAIL`, and an entry in [TODO.md](TODO.md). The run stays green, and reports the test once the bug is fixed.
+- Make sure a new test can fail: break the code it guards, once, and watch it fail.
 
 ## Comments
 

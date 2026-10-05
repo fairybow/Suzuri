@@ -13,11 +13,14 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] Opening the file that is already in the active, unpinned tab should do nothing
 - [ ] Minor: dragging a file quickly from near its row's bottom edge moves the selection band (grey, blue left edge) down to the next row, though that row isn't selected
 - [ ] The "Options" heading in the settings dialog can be hovered or selected and probably shouldn't be
+- [ ] A path with a `..` segment passes `Vault::contains`, so `Vault::rename` and `Vault::move` can take an entry out of the vault, and `Vault::moveToTrash` would take `<vault>/folder/..` for something other than the root. Nothing in the UI can send such a path. `VaultTest` holds the rename and move cases, marked `QEXPECT_FAIL`
 
 ## Rough edges
 
 - [ ] Tabs can be dragged past the left or right end of the tab bar without starting a drag; may want to clamp them
 - [ ] No auto-scroll while dragging a tab in an overflowing bar (close to impossible with Qt)
+- [ ] Under the "C" locale (a Linux session with no locale set), the file tree doesn't read a number in a name as a number: "chapter 10" sorts before "chapter 2"
+- [ ] On Windows, deleting a folder that a tree has listed, from outside Suzuri, logs Qt's "FindNextChangeNotification failed ... (Access is denied.)" once per watched folder. Harmless: the rows still go
 
 ## Before release
 
@@ -34,6 +37,18 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] `AbstractFileModel` has `notifyX()` functions that only emit a signal. Could they just be signals (perhaps named `notify...`)?
 - [ ] Decide whether static helpers go before other functions, per access level
 - [ ] A shared `TabPage` base for tab pages, holding title and pin state as typed members in place of the window title and a dynamic property. It would trade the leaf's property reads for a cast. Worth doing once a third such value appears
+- [ ] Run the tests on every push, for Suzuri and for Coco's smoke test. `release.yml` runs only on a version tag, and now builds the tests too: pass `-DAPP_BUILD_TESTS=OFF` there
+
+## Untested
+
+What the tests in `Suzuri/tests/` don't reach.
+
+- [ ] A failed write: the buffer stays modified, and `Vault::flush` names the file. There is no portable way to make a write fail on demand
+- [ ] The autosave debounce starting again on each edit. Proving it needs timing tight enough to fail on a slow machine
+- [ ] A successful `Vault::moveToTrash`. It would put a file in the real system trash on every run
+- [ ] `Vault::recreateRoot`
+- [ ] A file that starts with two byte-order marks. On Qt 6.4 one is dropped on load, which the comment on the mark in `TextFileModel.h` says can't happen. Check it on the Qt in use
+- [ ] `AppConfig`, `JsonIo`, `WorkspaceFile`, and everything in `views/` and `ui/`
 
 ## Audits
 

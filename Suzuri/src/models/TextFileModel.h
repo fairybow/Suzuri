@@ -156,6 +156,12 @@ public:
     void reloadContent(const QByteArray& data) override
     {
         prime_->replaceAllUndoable(adoptFormatAndDecode_(data));
+
+        // The buffer matches disk again. Clearing the flag also keeps what the
+        // user types next out of the reload's undo step: a text document
+        // folds an insertion into the one before it when the two touch and
+        // the document is modified, so text typed at the end of the reloaded
+        // text would otherwise undo together with the reload
         prime_->setModified(false);
     }
 

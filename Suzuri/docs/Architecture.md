@@ -24,7 +24,7 @@ Obsidian is the behavioral reference. Where Suzuri's intended behavior is unclea
 
 ## Source layout
 
-Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.cpp`, the code is header-only.
+Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.cpp`, the code is header-only. The tests sit beside it in `Suzuri/tests/`; see "Tests" in [CodeStyle.md](CodeStyle.md).
 
 | Folder | Holds |
 |---|---|
@@ -48,7 +48,7 @@ Includes run one way, from the top of this list down:
 - `ui/widgets/` takes nothing from the app but `ui/UiConstants.h`, which itself includes nothing of Suzuri's.
 - `core/` and `models/` include each other, and nothing from `views/` or `ui/`.
 
-`Vault` and everything it owns use QtCore only. No GUI type appears in them, so the data layer can't come to depend on a window.
+`Vault` and everything it owns create no window or widget and refer to none, so the data layer can't come to depend on one. They are not limited to QtCore: a text buffer is a `QTextDocument` with a plain-text layout (QtGui and QtWidgets), an image buffer holds a `QPixmap`, and a PDF buffer a `QPdfDocument`. `VaultTreeModel` and the configuration types are QtCore only.
 
 [Coco](https://github.com/fairybow/Coco), a submodule, supplies paths (`Coco::Path`), logging, debounce timers, and the single-instance guard.
 
@@ -229,6 +229,7 @@ So each text view owns a document of its own, and the buffer owns one more, the 
 - The prime belongs to no view, so closing any view, in any order, leaves the content intact.
 - Applying an edit to another view's document makes that document report an edit too. A guard around the fan-out stops the echo.
 - Undo lives on the prime alone. View documents have undo disabled; otherwise each view would undo only its own edits and the views would drift apart. The editor gives up the undo and redo keys so the window's actions handle them, and those actions reach the active view's buffer.
+- A reload is its own undo step. Qt folds an insertion into the one before it when the two touch and the document is marked modified, so text typed at the end of reloaded text would otherwise undo together with the reload. `TextFileModel` clears the modified flag straight after a reload, because the buffer matches disk again, and that is also what keeps the two apart.
 - Text is read from a document through a lossless path. Qt's plain-text accessor rewrites no-break spaces and some separators, which would silently change a file on its first save.
 
 ## Saving

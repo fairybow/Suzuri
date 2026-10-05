@@ -8,3 +8,7 @@ for /r "%~dp0..\src" %%f in (*.h *.cpp *.mm) do (
 for /r "%~dp0..\resources" %%f in (*.rc) do (
     %CF% -i "%%f"
 )
+
+for /r "%~dp0..\tests" %%f in (*.cpp) do (
+    %CF% -i "%%f"
+)

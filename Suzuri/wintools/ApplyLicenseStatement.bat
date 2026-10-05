@@ -3,6 +3,7 @@ setlocal
 
 set SRC_DIR=%~dp0..\src
 set RC_DIR=%~dp0..\resources
+set TEST_DIR=%~dp0..\tests
 set LICENSE_FILE=%~dp0..\docs\LicenseStatement.txt
 
 if not exist "%LICENSE_FILE%" (
@@ -15,7 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$utf8 = New-Object System.Text.UTF8Encoding $false;" ^
     "$license = [System.IO.File]::ReadAllText('%LICENSE_FILE%', $utf8);" ^
     "$license = $license.TrimEnd(\"`r\", \"`n\") + \"`r`n\";" ^
-    "$files = Get-ChildItem -Path '%SRC_DIR%','%RC_DIR%' -Recurse -Include '*.h','*.cpp','*.mm', '*.rc';" ^
+    "$files = Get-ChildItem -Path '%SRC_DIR%','%RC_DIR%','%TEST_DIR%' -Recurse -Include '*.h','*.cpp','*.mm', '*.rc';" ^
     "$count = 0;" ^
     "foreach ($f in $files) {" ^
     "    $content = [System.IO.File]::ReadAllText($f.FullName, $utf8);" ^
