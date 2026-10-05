@@ -35,11 +35,13 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.github/FUNDING.yml'
+      - 'Suzuri/resources/social/**'
   pull_request:
     paths-ignore:
       - '**.md'
       - 'LICENSE'
       - '.github/FUNDING.yml'
+      - 'Suzuri/resources/social/**'
   workflow_dispatch:
 
 # A newer push to the same branch replaces a run still in progress
