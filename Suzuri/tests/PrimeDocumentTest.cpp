@@ -41,10 +41,9 @@ Q_DECLARE_METATYPE(Edit)
 // Text outside ASCII is built from code point numbers, so nothing here
 // depends on how the compiler reads this file.
 //
-// In a debug build PrimeDocument checks for drift itself after every edit and
-// stops the program if it finds any. A case that drifts therefore ends this
-// test's run there, with PrimeDocument's own message, instead of failing a
-// comparison below.
+// PrimeDocument checks for drift itself after every edit, and resets a view
+// that has drifted from the prime. A case that makes a view drift therefore
+// fails below only if the prime was left holding the wrong text.
 //
 // Qt Test runs every private slot as a test. A slot named <test>_data fills a
 // table, and <test> then runs once per row, reported under the row's name
@@ -708,6 +707,72 @@ private slots:
 
         QCOMPARE(f.prime.text(), u"Xone"_s);
         QCOMPARE(textOf_(f.a), u"Xone"_s);
+    }
+
+    // --- Drift --------------------------------------------------------------
+
+    // A view's document is changed without the prime hearing of it, which
+    // nothing in the app does. The next edit, from anywhere, finds the view
+    // out of step and resets it from the prime
+
+    void aDriftedViewIsResetByAnEditElsewhere()
+    {
+        Fixture_ f(u"one"_s);
+
+        f.a.blockSignals(true);
+        QTextCursor unheard(&f.a);
+        unheard.insertText(u"DRIFT"_s);
+        f.a.blockSignals(false);
+
+        QCOMPARE(textOf_(f.a), u"DRIFTone"_s);
+        QCOMPARE(f.prime.text(), u"one"_s);
+
+        QTextCursor in_b(&f.b);
+        in_b.movePosition(QTextCursor::End);
+        in_b.insertText(u"!"_s);
+
+        VERIFY_ALL_HOLD(f, u"one!"_s);
+    }
+
+    void aDriftedViewIsResetByItsOwnEdit()
+    {
+        Fixture_ f(u"one"_s);
+
+        f.a.blockSignals(true);
+        QTextCursor unheard(&f.a);
+        unheard.insertText(u"DRIFT"_s);
+        f.a.blockSignals(false);
+
+        QTextCursor in_a(&f.a);
+        in_a.movePosition(QTextCursor::End);
+        in_a.insertText(u"!"_s);
+
+        // The edit was made past the end of the prime's text, so it lands at
+        // the end
+        VERIFY_ALL_HOLD(f, u"one!"_s);
+
+        // The views are in step again, so the next edit goes where it is made
+        QTextCursor again(&f.a);
+        again.insertText(u"X"_s);
+
+        VERIFY_ALL_HOLD(f, u"Xone!"_s);
+    }
+
+    void aDriftedViewIsResetByUndo()
+    {
+        Fixture_ f(u"one"_s);
+
+        QTextCursor in_b(&f.b);
+        in_b.insertText(u"X"_s);
+
+        f.a.blockSignals(true);
+        QTextCursor unheard(&f.a);
+        unheard.insertText(u"DRIFT"_s);
+        f.a.blockSignals(false);
+
+        f.prime.undo();
+
+        VERIFY_ALL_HOLD(f, u"one"_s);
     }
 
     // --- Signals ------------------------------------------------------------

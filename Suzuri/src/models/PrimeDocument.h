@@ -141,7 +141,7 @@ public:
             view_doc->setPlainText(prime_text);
         }
 
-        assertSync_(__FUNCTION__);
+        checkSync_(__FUNCTION__);
     }
 
     // Replace the ENTIRE document as one undoable step, routed to every view
@@ -305,7 +305,7 @@ private:
 
         applyDelta_(document_, pos, removed, added_text);
         routeDelta_(source, pos, removed, added_text);
-        assertSync_(__FUNCTION__);
+        checkSync_(__FUNCTION__);
     }
 
     // Replay a prime operation (undo/redo/insert) out to all view documents
@@ -338,7 +338,7 @@ private:
             emit cursorPositionHint(hint_pos);
         }
 
-        assertSync_(__FUNCTION__);
+        checkSync_(__FUNCTION__);
     }
 
     // The document's text exactly as stored, with line breaks as '\n'. NOT
@@ -422,39 +422,69 @@ private:
         }
     }
 
-    void assertSync_([[maybe_unused]] const char* context)
+    // Does this view document hold the prime's text? Every build compares
+    // lengths, which costs nothing and catches a lost or doubled edit. A debug
+    // build also compares the text itself, which catches an edit applied at the
+    // wrong position; that reads every character of both documents, too much
+    // to pay per keystroke in a large file in release
+    [[nodiscard]] bool isInSync_(const QTextDocument* viewDoc) const
     {
+        if (viewDoc->characterCount() != document_->characterCount()) {
+            return false;
+        }
 
 #if APP_DEBUG
 
-        auto prime_text = losslessPlainText_(document_);
+        return losslessPlainText_(viewDoc) == losslessPlainText_(document_);
 
-        for (auto* view_doc : viewDocuments_) {
-            auto view_text = losslessPlainText_(view_doc);
+#else
 
-            if (view_text != prime_text) {
-                auto min_len = qMin(prime_text.length(), view_text.length());
-                auto diverge = 0;
-                while (diverge < min_len &&
-                       prime_text[diverge] == view_text[diverge]) {
-                    ++diverge;
-                }
-
-                FATAL(
-                    "Document drift detected in {}! View document [{}] out of "
-                    "sync (prime len={}, view len={}, first divergence at "
-                    "pos={}, prime around=\"{}\", view around=\"{}\")",
-                    context,
-                    view_doc,
-                    prime_text.length(),
-                    view_text.length(),
-                    diverge,
-                    prime_text.mid(qMax(0, diverge - 20), 60),
-                    view_text.mid(qMax(0, diverge - 20), 60));
-            }
-        }
+        return true;
 
 #endif // APP_DEBUG
+    }
+
+    // Run after every routed change. A view document that has drifted from the
+    // prime is reset to the prime's text: the prime holds the undo stack and is
+    // what gets saved, so it is the one to keep. Left alone, each later edit
+    // from that view would land in the prime at a position that means
+    // something else there. The reset moves that view's cursor to the start,
+    // and drops whatever the view showed that the prime never had.
+    //
+    // Nothing known causes drift; this is here for a bug not yet found
+    void checkSync_(const char* context)
+    {
+        for (auto* view_doc : viewDocuments_) {
+            if (isInSync_(view_doc)) {
+                continue;
+            }
+
+            auto prime_text = losslessPlainText_(document_);
+            auto view_text = losslessPlainText_(view_doc);
+
+            auto min_len = qMin(prime_text.length(), view_text.length());
+            auto diverge = 0;
+            while (diverge < min_len &&
+                   prime_text[diverge] == view_text[diverge]) {
+                ++diverge;
+            }
+
+            CRITICAL(
+                "Document drift detected in {}! View document [{}] out of "
+                "sync and reset from the prime (prime len={}, view len={}, "
+                "first divergence at pos={}, prime around=\"{}\", view "
+                "around=\"{}\")",
+                context,
+                view_doc,
+                prime_text.length(),
+                view_text.length(),
+                diverge,
+                prime_text.mid(qMax(0, diverge - 20), 60),
+                view_text.mid(qMax(0, diverge - 20), 60));
+
+            RoutingScope_ scope(routing_);
+            view_doc->setPlainText(prime_text);
+        }
     }
 };
 
