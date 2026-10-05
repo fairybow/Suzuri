@@ -102,6 +102,25 @@ git push origin v0.0.0-beta.0
 
 <a id="releases"></a>
 
+# 0.0.0-beta.1 (Soft Release) - tag v0.0.0-beta.1
+
+## What's New?
+
+A small release of fixes and safeguards.
+
+- **Fixed:** on Windows, vaults, folders, and files with names outside the system's code page (emoji, and some accented or non-Latin letters) weren't handled correctly. Paths are now Unicode all the way through
+- A vault now refuses any path that would step outside its folder, such as one containing `..`. Nothing in the app could produce one, but a hand-edited or damaged `workspace.json` could, and Suzuri would have opened and saved a file outside the vault
+- If the views of a file open in more than one tab ever disagree about its text, Suzuri now notices and resets the view to the text that is being saved. No cause for this is known. It's a safety net
+- Suzuri now has automated tests for its file handling, run on Linux and macOS for every change
+
+## Known Issues
+
+- Focus doesn't always land in the editor after dragging a tab or restoring a session
+- Pop-out windows can reopen behind their vault window
+- macOS and Linux builds are not well-tested
+
+---
+
 # 0.0.0-beta.0 (Initial Release) - tag v0.0.0-beta.0
 
 ## What's New?
