@@ -13,6 +13,13 @@
     <a href="https://github.com/fairybow/Suzuri/releases"><b>Releases</b></a> •
     <a href="Suzuri/docs"><b>Documentation</b></a>
 </p>
+<p align="center">
+    &nbsp
+    <br>
+    <img src="Suzuri/resources/social/SuzuriWindow.png" alt="Screenshot" width="640">
+    <br>
+    &nbsp
+</p>
 
 ## About
 
