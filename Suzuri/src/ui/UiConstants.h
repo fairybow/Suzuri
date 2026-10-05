@@ -159,8 +159,8 @@ inline constexpr auto COMMON_DRAWER_LABEL = DrawerLabel::Icon;
 // clamped to HEIGHT; a clamp never shifts what follows. A fixed height doesn't
 // track the font: a larger UI font clips the title rather than growing the row
 inline constexpr int DRAWER_HEADER_HEIGHT = 26;
-inline constexpr int DRAWER_HEADER_LEFT_PADDING = 11;
-inline constexpr int DRAWER_CHEVRON_SPACING = 12;
+inline constexpr int DRAWER_HEADER_LEFT_PADDING = 8;
+inline constexpr int DRAWER_CHEVRON_SPACING = 6;
 inline constexpr int DRAWER_COMMON_VAULT_ICON_SPACING = 6;
 inline constexpr int DRAWER_CHEVRON_EXTENT = 12;
 inline constexpr int DRAWER_COMMON_VAULT_ICON_EXTENT = 12;
@@ -170,7 +170,7 @@ inline constexpr int DRAWER_COMMON_VAULT_ICON_EXTENT = 12;
 // measured from the button's own edge, frame included; 4 is where the style's
 // own label would put the glyph
 inline constexpr int VAULT_SWITCHER_HEIGHT = 28;
-inline constexpr int VAULT_SWITCHER_LEFT_PADDING = 10;
+inline constexpr int VAULT_SWITCHER_LEFT_PADDING = 8;
 inline constexpr int VAULT_SWITCHER_ICON_SPACING = 6;
 inline constexpr int VAULT_SWITCHER_ICON_EXTENT = 14;
 
