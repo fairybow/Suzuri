@@ -21,6 +21,8 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] No auto-scroll while dragging a tab in an overflowing bar (close to impossible with Qt)
 - [ ] Under the "C" locale (a Linux session with no locale set), the file tree doesn't read a number in a name as a number: "chapter 10" sorts before "chapter 2"
 - [ ] A vault whose root path is not plain (a trailing separator, a `.` or `..` segment) contains nothing by `Vault::contains`, so every create, rename, move, and delete in it is refused. The folder picker and the known-vaults list give plain paths; a root from the command line will need cleaning first
+- [ ] In a release build, `PrimeDocument` notices a view document out of step with the prime only when their lengths differ. An edit applied at the wrong position keeps the lengths equal and goes unnoticed until they diverge. A full comparison when a save reads the text would catch it before it reaches disk
+- [ ] When `PrimeDocument` resets a view that was out of step, that view's cursor goes to the start of the file
 - [ ] On Windows, deleting a folder that a tree has listed, from outside Suzuri, logs Qt's "FindNextChangeNotification failed ... (Access is denied.)" once per watched folder. Harmless: the rows still go
 
 ## Before release
