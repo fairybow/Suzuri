@@ -37,7 +37,8 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] `AbstractFileModel` has `notifyX()` functions that only emit a signal. Could they just be signals (perhaps named `notify...`)?
 - [ ] Decide whether static helpers go before other functions, per access level
 - [ ] A shared `TabPage` base for tab pages, holding title and pin state as typed members in place of the window title and a dynamic property. It would trade the leaf's property reads for a cast. Worth doing once a third such value appears
-- [ ] Run the tests on every push, for Suzuri and for Coco's smoke test. `release.yml` runs only on a version tag, and now builds the tests too: pass `-DAPP_BUILD_TESTS=OFF` there
+- [x] Run the tests on every push, for Suzuri and for Coco's smoke test. `release.yml` runs only on a version tag, and now builds the tests too: pass `-DAPP_BUILD_TESTS=OFF` there
+- [ ] CI has no Windows job. Qt 6.11 installs on Windows only through the official installer, which needs a Qt account (see `release.yml`). Add the job once the open-source installer handles it
 
 ## Untested
 
