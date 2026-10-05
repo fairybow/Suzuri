@@ -582,18 +582,84 @@ private slots:
         QVERIFY(!f.exists(u"b.txt"_s));
     }
 
-    // --- Leaving the vault through ".." -------------------------------------
+    // --- Paths that are not plain -------------------------------------------
 
-    // Neither a name nor a destination can step out of the vault with "..".
-    // Both tests use a file name built from the temporary folder's own name,
-    // so if the file does leave, it is found and removed, and nothing else
-    // beside the folder can share its name.
+    // The vault takes a path only as a list of names: no "." or "..", no
+    // trailing separator, and for a relative path no root. Anything else is
+    // refused, whether or not it would land inside the vault.
     //
-    // These are KNOWN FAILURES: the vault's check for "inside the vault" walks
-    // a path's parents as written, and a ".." segment is written under the
-    // root it climbs out of. QEXPECT_FAIL records that, so the run stays
-    // green; once the check is fixed these report XPASS, and the QEXPECT_FAIL
-    // lines come out
+    // Where a test tries to put a file outside the vault, the file's name is
+    // built from the temporary folder's own name, so if it does get out it is
+    // found and removed, and nothing else beside the folder can share its name
+
+    void containsRefusesAPathThatIsNotPlain()
+    {
+        Fixture_ f{};
+        f.makeFolder(u"one"_s);
+
+        QVERIFY(!f.vault.contains(f.absolute(u"one/.."_s)));
+        QVERIFY(!f.vault.contains(f.absolute(u"one/../.."_s)));
+        QVERIFY(!f.vault.contains(f.absolute(u"one/./a.txt"_s)));
+        QVERIFY(!f.vault.contains(f.absolute(u"one/../one/a.txt"_s)));
+        QVERIFY(!f.vault.contains(Coco::Path(f.folder.path() + u"/"_s)));
+        QVERIFY(!f.vault.contains(Coco::Path(f.folder.path() + u"/."_s)));
+    }
+
+    void openRefusesAPathThroughDots()
+    {
+        Fixture_ f{};
+        auto escapee = QFileInfo(f.folder.path()).fileName() + u"-out.txt"_s;
+        auto outside = QFileInfo(f.folder.path()).dir().filePath(escapee);
+        f.write(u"one/a.txt"_s, "hello");
+
+        QFile file(outside);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("outside");
+        file.close();
+
+        auto* out = f.open(u"../"_s + escapee);
+        auto* around = f.open(u"one/../one/a.txt"_s);
+        auto* dotted = f.open(u"./one/a.txt"_s);
+
+        QFile::remove(outside);
+
+        QVERIFY(!out);
+        QVERIFY(!around);
+        QVERIFY(!dotted);
+    }
+
+    void openRefusesAnAbsolutePath()
+    {
+        Fixture_ f{};
+        f.write(u"a.txt"_s, "hello");
+
+        QTemporaryDir elsewhere{};
+        QFile outside(elsewhere.filePath(u"b.txt"_s));
+        QVERIFY(outside.open(QIODevice::WriteOnly));
+        outside.close();
+
+        QVERIFY(!f.open(elsewhere.filePath(u"b.txt"_s)));
+        QVERIFY(!f.open(f.absolute(u"a.txt"_s).toQString()));
+        QVERIFY(!f.open(QString{}));
+    }
+
+    void createOutsideTheVaultIsRefused()
+    {
+        Fixture_ f{};
+        f.makeFolder(u"one"_s);
+        QTemporaryDir elsewhere{};
+
+        QVERIFY(f.vault.createFile(Coco::Path(elsewhere.path())).isEmpty());
+        QVERIFY(f.vault.createFolder(Coco::Path(elsewhere.path())).isEmpty());
+        QVERIFY(QDir(elsewhere.path())
+                    .entryList(QDir::AllEntries | QDir::NoDotAndDotDot)
+                    .isEmpty());
+
+        // A folder inside the vault, by a path that is not plain
+        QVERIFY(f.vault.createFile(f.absolute(u"one/../one"_s)).isEmpty());
+        QVERIFY(f.vault.createFolder(f.absolute(u"one/."_s)).isEmpty());
+        QVERIFY(f.namesIn(u"one"_s).isEmpty());
+    }
 
     void renameCannotLeaveTheVault()
     {
@@ -608,8 +674,33 @@ private slots:
         auto left = QFileInfo::exists(outside);
         QFile::remove(outside);
 
-        QEXPECT_FAIL("", "A \"..\" in a new name leaves the vault", Abort);
-        QVERIFY(renamed.isEmpty() && !left);
+        QVERIFY(renamed.isEmpty());
+        QVERIFY(!left);
+        QVERIFY(f.exists(u"one/a.txt"_s));
+    }
+
+    void renameTakesOnlyASingleName()
+    {
+        Fixture_ f{};
+        f.write(u"one/a.txt"_s, "hello");
+        f.makeFolder(u"two"_s);
+        auto* model = f.open(u"one/a.txt"_s);
+        QVERIFY(model);
+
+        auto old = f.absolute(u"one/a.txt"_s);
+
+        QVERIFY(f.vault.rename(old, u"../moved.txt"_s).isEmpty());
+        QVERIFY(f.vault.rename(old, u"../two/moved.txt"_s).isEmpty());
+        QVERIFY(f.vault.rename(old, u"sub/moved.txt"_s).isEmpty());
+        QVERIFY(f.vault.rename(old, u".."_s).isEmpty());
+        QVERIFY(f.vault.rename(old, u"."_s).isEmpty());
+        QVERIFY(f.vault.rename(old, u"moved.txt/"_s).isEmpty());
+        QVERIFY(f.vault.rename(old, QString{}).isEmpty());
+
+        QVERIFY(f.exists(u"one/a.txt"_s));
+        QVERIFY(!f.exists(u"moved.txt"_s));
+        QVERIFY(f.namesIn(u"two"_s).isEmpty());
+        QCOMPARE(model->fileRef().relative, Coco::Path("one/a.txt"));
     }
 
     void moveCannotLeaveTheVault()
@@ -627,8 +718,28 @@ private slots:
         auto left = QFileInfo::exists(outside);
         QFile::remove(outside);
 
-        QEXPECT_FAIL("", "A \"..\" in a destination leaves the vault", Abort);
-        QVERIFY(moved.isEmpty() && !left);
+        QVERIFY(moved.isEmpty());
+        QVERIFY(!left);
+        QVERIFY(f.exists(u"one/"_s + escapee));
+    }
+
+    void moveRefusesAPathThatIsNotPlain()
+    {
+        Fixture_ f{};
+        f.write(u"a.txt"_s, "hello");
+        f.makeFolder(u"one"_s);
+        f.makeFolder(u"two"_s);
+
+        // Both would land inside the vault
+        QVERIFY(
+            f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"two/../one"_s))
+                .isEmpty());
+        QVERIFY(
+            f.vault.move(f.absolute(u"one/../a.txt"_s), f.absolute(u"one"_s))
+                .isEmpty());
+
+        QVERIFY(f.exists(u"a.txt"_s));
+        QVERIFY(f.namesIn(u"one"_s).isEmpty());
     }
 
     // --- Moving -------------------------------------------------------------
@@ -963,6 +1074,7 @@ private slots:
     {
         Fixture_ f{};
         f.write(u"a.txt"_s, "hello");
+        f.makeFolder(u"one"_s);
 
         QTemporaryDir elsewhere{};
         QFile outside(elsewhere.filePath(u"b.txt"_s));
@@ -973,6 +1085,12 @@ private slots:
             !f.vault.moveToTrash(Coco::Path(elsewhere.filePath(u"b.txt"_s))));
         QVERIFY(!f.vault.moveToTrash(f.root));
         QVERIFY(!f.vault.moveToTrash(f.absolute(u"gone.txt"_s)));
+
+        // The root and a file, by paths that are not plain
+        QVERIFY(!f.vault.moveToTrash(Coco::Path(f.folder.path() + u"/"_s)));
+        QVERIFY(!f.vault.moveToTrash(Coco::Path(f.folder.path() + u"/."_s)));
+        QVERIFY(!f.vault.moveToTrash(f.absolute(u"one/.."_s)));
+        QVERIFY(!f.vault.moveToTrash(f.absolute(u"one/../a.txt"_s)));
 
         QVERIFY(QFileInfo::exists(elsewhere.filePath(u"b.txt"_s)));
         QVERIFY(QFileInfo(f.folder.path()).isDir());

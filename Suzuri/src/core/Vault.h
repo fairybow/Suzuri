@@ -94,10 +94,19 @@ public:
     // Does an absolute path belong to this vault — is it root or nested under
     // it? Routes a file dropped on an editor to the owning vault. Rejects a
     // path outside the root, where relativePathOf would produce a "../"-laden
-    // key, so a drag from another window's vault opens nothing here
+    // key, so a drag from another window's vault opens nothing here.
+    //
+    // The path must also be plain (Coco::Path::isPlain). isAtOrUnder compares
+    // the path as written, and "<root>/a/../.." is written under the root it
+    // climbs out of; a plain path has no such segment, so written under the
+    // root means under the root. A second spelling of an inside path
+    // ("<root>/a/./b") is refused as well, never normalized: its relative form
+    // would be a second key for one file.
+    //
+    // Every public function that takes an absolute path answers to this
     [[nodiscard]] bool contains(const Coco::Path& absolute) const
     {
-        return absolute.isAtOrUnder(root_);
+        return absolute.isPlain() && absolute.isAtOrUnder(root_);
     }
 
     // Every file this vault shows, vault-relative — the FileSwitcher's listing.
@@ -142,8 +151,9 @@ public:
     // dedup point that makes "same file open twice" and "common file open in
     // two windows" both resolve to a single model.
     //
-    // Returns nullptr for a file Suzuri won't open: an unsupported type, a file
-    // it can't read — gone since it was listed, or locked — or a text file that
+    // Returns nullptr for a file Suzuri won't open: a path that isn't a
+    // vault-relative key (see isKey_), an unsupported type, a file it can't
+    // read — gone since it was listed, or locked — or a text file that
     // isn't valid UTF-8 whose open the caller declined. This is the
     // AUTHORITATIVE refusal: the tree and the FileSwitcher hide unsupported
     // files, but those are advisory, and this is the one gate every open path —
@@ -157,6 +167,15 @@ public:
         const Coco::Path& relative,
         const ConfirmLossyOpen& confirmLossyOpen)
     {
+        // Before anything else: a key that isn't one can't be in the map, and
+        // absolutePathOf would turn it into a path outside the vault
+        if (!isKey_(relative)) {
+            WARN(
+                "Refusing to open {}: not a path inside the vault!",
+                relative.prettyQString());
+            return nullptr;
+        }
+
         if (auto it = models_.constFind(relative); it != models_.constEnd()) {
             return it.value();
         }
@@ -296,6 +315,11 @@ public:
     // buffers, so the file exists on disk before any buffer opens it
     Coco::Path createFile(const Coco::Path& absoluteDir)
     {
+        if (!contains(absoluteDir)) {
+            WARN("Can't create a file in {}: outside the vault!", absoluteDir);
+            return {};
+        }
+
         auto absolute = uniqueChildPath_(absoluteDir, u"Untitled"_s, u".txt"_s);
 
         // CreateDirs::No: a folder deleted between the right-click and the
@@ -311,6 +335,13 @@ public:
 
     Coco::Path createFolder(const Coco::Path& absoluteDir)
     {
+        if (!contains(absoluteDir)) {
+            WARN(
+                "Can't create a folder in {}: outside the vault!",
+                absoluteDir);
+            return {};
+        }
+
         auto absolute = uniqueChildPath_(absoluteDir, u"Untitled"_s, QString{});
 
         if (!Coco::mkdir(absolute)) {
@@ -329,9 +360,22 @@ public:
     // failure). A rename is a relocation whose parent doesn't change, so it
     // funnels through relocate_ (below) exactly as a move does — the disk op,
     // watcher suppression, and buffer re-keying are shared. Declines cleanly on
-    // a locked entry, never corrupts
+    // a locked entry, never corrupts.
+    //
+    // newLeaf must be one name. Anything with a separator, a "." or "..", or a
+    // root would make this a move, and is refused
     Coco::Path rename(const Coco::Path& absoluteOld, const QString& newLeaf)
     {
+        auto leaf = Coco::Path(newLeaf);
+
+        if (leaf.isEmpty() || !leaf.isPlain() || leaf.name() != leaf) {
+            WARN(
+                "Can't rename {} to {}: not a single name!",
+                absoluteOld,
+                leaf);
+            return {};
+        }
+
         return relocate_(absoluteOld, absoluteOld.parent() / newLeaf);
     }
 
@@ -388,7 +432,9 @@ public:
     {
         // Same authority relocate_ holds: relativePathOf would answer a
         // "../"-laden path for an outside entry, and modelsAtOrUnder_ would
-        // then match nothing and the disk op would still run
+        // then match nothing and the disk op would still run. contains also
+        // refuses every other spelling of the root ("<root>/a/..", "<root>/"),
+        // which the comparison below would not recognize
         if (!contains(absoluteEntry)) {
             WARN("Trash refused — {} is outside the vault!", absoluteEntry);
             return false;
@@ -740,6 +786,15 @@ private:
     // ceiling to change that
     int autosaveDebounceMs_ = 1000;
     int autosaveCeilingMs_ = 3000;
+
+    // Is this a vault-relative key — the form models_ and FileRefs hold? It
+    // names something, has no root (appending a rooted path to root_ replaces
+    // part of root_ rather than nesting under it), and is plain, so it stays
+    // under the root and is the only spelling of its file
+    [[nodiscard]] bool isKey_(const Coco::Path& relative) const
+    {
+        return !relative.isEmpty() && !relative.hasRoot() && relative.isPlain();
+    }
 
     void setup_()
     {
