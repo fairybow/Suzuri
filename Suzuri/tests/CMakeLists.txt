@@ -62,7 +62,11 @@ endfunction()
 # class's staticMetaObject: add its header, and the header of each QObject
 # base class.
 add_library(AppTestMocs OBJECT
+    ${PROJECT_SOURCE_DIR}/src/core/Vault.h
+    ${PROJECT_SOURCE_DIR}/src/core/VaultTreeModel.h
     ${PROJECT_SOURCE_DIR}/src/models/AbstractFileModel.h
+    ${PROJECT_SOURCE_DIR}/src/models/ImageFileModel.h
+    ${PROJECT_SOURCE_DIR}/src/models/PdfFileModel.h
     ${PROJECT_SOURCE_DIR}/src/models/PrimeDocument.h
     ${PROJECT_SOURCE_DIR}/src/models/TextFileModel.h
 )
@@ -90,3 +94,4 @@ app_add_test(FileTypesTest)
 app_add_test(PrimeDocumentTest)
 app_add_test(TextCountsTest)
 app_add_test(TextFileModelTest)
+app_add_test(VaultTest)
