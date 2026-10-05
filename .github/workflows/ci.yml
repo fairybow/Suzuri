@@ -1,0 +1,131 @@
+# =============================================================================
+# Suzuri: CI
+# =============================================================================
+#
+# Builds the app and its tests, then runs the tests. Triggered by a push to any
+# branch, by a pull request, and by hand (Actions tab, "Run workflow"). A
+# change to nothing but docs doesn't trigger it.
+#
+# Jobs:
+#   linux  -> ubuntu-22.04, gcc-13
+#   macos  -> macos-14 (ARM / Apple Silicon), Apple clang
+#
+# Both match release.yml's runner and compiler, so a pass here means those two
+# platforms still build.
+#
+# There is no Windows job. Qt 6.11 on Windows installs only through the
+# official installer, which needs the QT_EMAIL / QT_PW secrets (see
+# release.yml), and Windows is where the app is developed and run every day.
+#
+# The build is Debug: it turns on PrimeDocument's check that its views agree,
+# and Coco's assertions.
+#
+# Path assumptions (from repo root):
+#   (.github/workflows/ci.yml)
+#   Suzuri/                          (CMake source dir)
+#   Suzuri/tests/                    (built when APP_BUILD_TESTS is ON)
+
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/FUNDING.yml'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.github/FUNDING.yml'
+  workflow_dispatch:
+
+# A newer push to the same branch replaces a run still in progress
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: '6.11.2'
+  BUILD_TYPE: Debug
+
+jobs:
+
+  # ===========================================================================
+  # Linux
+  # ===========================================================================
+
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: linux_gcc_64
+          modules: qtimageformats qtpdf
+          cache: true
+
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-13 g++-13 \
+            libxcb1-dev libx11-xcb-dev libxkbcommon-dev \
+            libgl1-mesa-dev
+
+      - name: Configure
+        run: |
+          cmake -B build -S Suzuri \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DCMAKE_C_COMPILER=gcc-13 \
+            -DCMAKE_CXX_COMPILER=g++-13 \
+            -DAPP_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      # Each test sets QT_QPA_PLATFORM=offscreen for itself
+      # (tests/CMakeLists.txt), so no display is needed
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ===========================================================================
+  # macOS (ARM / Apple Silicon)
+  # ===========================================================================
+
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: clang_64
+          modules: qtimageformats qtpdf
+          cache: true
+
+      - name: Configure
+        run: |
+          cmake -B build -S Suzuri \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DAPP_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure

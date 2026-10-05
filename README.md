@@ -6,6 +6,7 @@
 <p align="center">
     <a href="LICENSE"><img src="https://img.shields.io/badge/GPL%203-red.svg?style=flat-square" alt="GPL 3 license"></a>
     <a href="https://qt.io/"><img src="https://img.shields.io/badge/Qt%206.11-brightgreen?style=flat-square" alt="Qt-6.11"></a>
+    <a href="https://github.com/fairybow/Suzuri/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/fairybow/Suzuri/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
     <br>
     <a href="https://github.com/fairybow/Suzuri/releases"><img src="https://img.shields.io/badge/Windows%20|%20macOS%20|%20Linux-grey.svg?style=flat-square" alt="Platforms: Windows, macOS, Linux"></a>
     <br>

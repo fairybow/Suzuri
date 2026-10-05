@@ -25,6 +25,9 @@
 #   LICENSE
 #
 # Secrets (Windows Qt install): QT_EMAIL, QT_PW
+#
+# The tests are not built here (APP_BUILD_TESTS=OFF). ci.yml builds and runs
+# them on every push
 
 name: Release
 
@@ -131,7 +134,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCMAKE_C_COMPILER=gcc-13 \
-            -DCMAKE_CXX_COMPILER=g++-13
+            -DCMAKE_CXX_COMPILER=g++-13 \
+            -DAPP_BUILD_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -192,7 +196,8 @@ jobs:
       - name: Configure
         run: |
           cmake -B build -S Suzuri \
-            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DAPP_BUILD_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -269,7 +274,8 @@ jobs:
           cmake -B build -S Suzuri -G Ninja `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DCMAKE_C_COMPILER=cl `
-            -DCMAKE_CXX_COMPILER=cl
+            -DCMAKE_CXX_COMPILER=cl `
+            -DAPP_BUILD_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
