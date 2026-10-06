@@ -337,6 +337,7 @@ All of it is JSON, read and written by stateless free functions (`core/JsonIo.h`
 - **Each config type holds its own defaults.** A missing key falls to the default. There is no chain of fallbacks between vault and app settings.
 - **Only set keys are written.**
 - **Config types are plain values, not `QObject`s.** `Vault` announces a settings change with one signal, and saves a moment later so a dragged slider writes once.
+- **A vault setting changes one way.** `Vault::setConfig` takes the `VaultConfig` setter to call and the value. It announces and saves only if that setter reports a change, so no setting has code of its own in `Vault` to get wrong.
 - **Settings are applied from the window's vault.** A Common Vault file in a project window takes the project's settings. A tab can only move within one window family, so a view's settings source never changes.
 - **`ui/UiConstants.h` and `views/ViewConstants.h` are not configuration.** They hold values tuned in code and constants shared between classes.
 
@@ -434,6 +435,7 @@ Each of these was built or seriously considered. They are recorded so they aren'
 - **A placeholder buffer for empty tabs.** An off-disk buffer by another name.
 - **A separate object tracking views per buffer.** The buffer already is that record, and the vault's map already is the registry.
 - **A central table of hotkeys consulted when actions are created.** A window created before a rebind would keep its old keys either way. Defaults stay where each action is created, and a rebinding layer will walk each window's registry.
+- **A table of settings in `VaultConfig`** (rows of key, type, default, and range, read by key). It would remove the per-setting getter, setter, and read and write lines, but callers would lose typed getters like `config.lineNumbers()`, and the file as it stands is long but plain.
 - **`QSettings`.** The app-level data is structured, the vault files are meant to be read and diffed, and INI-style settings are what grew Hearth's tiered settings.
 - **A process-wide pixmap cache for icons.** A global store, against the no-singletons rule.
 - **Painting selection handles on an overlay widget.** Hearth's approach. The overlay had to be realigned with the editor on every update; painted by the editor, the handles scroll with the text.
