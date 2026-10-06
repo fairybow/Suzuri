@@ -13,6 +13,7 @@
 #pragma once
 
 #include <functional>
+#include <type_traits>
 
 #include <QByteArray>
 #include <QFileSystemWatcher>
@@ -563,150 +564,24 @@ public:
     // --- Per-vault settings --------------------------------------------------
 
     // The vault's config, loaded at construction. Read-only here: every change
-    // goes through the setters below, so each one is announced and saved and
+    // goes through setConfig below, so each one is announced and saved and
     // none can slip past both
     [[nodiscard]] const VaultConfig& config() const noexcept { return config_; }
 
-    // Intent setters for the settings dialog. Each forwards to VaultConfig,
-    // and only a real change (VaultConfig's setters report it) announces
-    // configChanged and arms the save — so re-picking the current font writes
-    // nothing
-    void setTextFontFamily(const QString& family)
+    // Change one setting: setter is the VaultConfig setter to call, value what
+    // to give it. The one way a setting changes, so each change is announced
+    // and saved. Only a real change (VaultConfig's setters report it) announces
+    // configChanged and arms the save, so re-picking the current font writes
+    // nothing.
+    //
+    // std::type_identity_t keeps value out of deduction: ValueT comes from the
+    // setter alone, and value converts to it
+    template <typename ValueT>
+    void setConfig(
+        bool (VaultConfig::*setter)(ValueT),
+        std::type_identity_t<ValueT> value)
     {
-        if (config_.setTextFontFamily(family)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setTextFontSize(int size)
-    {
-        if (config_.setTextFontSize(size)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setTextFontBold(bool bold)
-    {
-        if (config_.setTextFontBold(bold)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setTextFontItalic(bool italic)
-    {
-        if (config_.setTextFontItalic(italic)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWordCounterEnabled(bool enabled)
-    {
-        if (config_.setWordCounterEnabled(enabled)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWordCounterWords(bool shown)
-    {
-        if (config_.setWordCounterWords(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWordCounterCharacters(bool shown)
-    {
-        if (config_.setWordCounterCharacters(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWordCounterLines(bool shown)
-    {
-        if (config_.setWordCounterLines(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWordCounterSelection(bool shown)
-    {
-        if (config_.setWordCounterSelection(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setCursorPositionEnabled(bool enabled)
-    {
-        if (config_.setCursorPositionEnabled(enabled)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setCursorPositionLine(bool shown)
-    {
-        if (config_.setCursorPositionLine(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setCursorPositionColumn(bool shown)
-    {
-        if (config_.setCursorPositionColumn(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setLineNumbers(bool shown)
-    {
-        if (config_.setLineNumbers(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setWrapLines(bool wrapped)
-    {
-        if (config_.setWrapLines(wrapped)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setLeftRightMargin(int percent)
-    {
-        if (config_.setLeftRightMargin(percent)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setTabWidth(int spaces)
-    {
-        if (config_.setTabWidth(spaces)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setCenterOnScroll(bool enabled)
-    {
-        if (config_.setCenterOnScroll(enabled)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setLineHighlight(bool shown)
-    {
-        if (config_.setLineHighlight(shown)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setDoubleClickWhitespace(bool enabled)
-    {
-        if (config_.setDoubleClickWhitespace(enabled)) {
-            onConfigChanged_();
-        }
-    }
-
-    void setSelectionHandles(bool shown)
-    {
-        if (config_.setSelectionHandles(shown)) {
+        if ((config_.*setter)(value)) {
             onConfigChanged_();
         }
     }

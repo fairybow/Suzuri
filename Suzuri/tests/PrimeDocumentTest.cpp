@@ -234,28 +234,23 @@ private slots:
             << u"x\n\ny"_s;
 
         // A pasted CRLF is one break, as the document reads it
-        QTest::newRow("paste a CRLF")
-            << u"xy"_s << Edit([](QTextCursor& c) {
-                   c.setPosition(1);
-                   c.insertText(u"A\r\nB"_s);
-               })
-            << u"xA\nBy"_s;
+        QTest::newRow("paste a CRLF") << u"xy"_s << Edit([](QTextCursor& c) {
+            c.setPosition(1);
+            c.insertText(u"A\r\nB"_s);
+        }) << u"xA\nBy"_s;
 
         // Deleting
-        QTest::newRow("Backspace")
-            << u"one"_s << Edit([](QTextCursor& c) {
-                   c.movePosition(QTextCursor::End);
-                   c.deletePreviousChar();
-               })
-            << u"on"_s;
+        QTest::newRow("Backspace") << u"one"_s << Edit([](QTextCursor& c) {
+            c.movePosition(QTextCursor::End);
+            c.deletePreviousChar();
+        }) << u"on"_s;
 
         QTest::newRow("Delete")
             << u"one"_s << Edit([](QTextCursor& c) { c.deleteChar(); })
             << u"ne"_s;
 
         QTest::newRow("delete the only character")
-            << u"x"_s << Edit([](QTextCursor& c) { c.deleteChar(); })
-            << u""_s;
+            << u"x"_s << Edit([](QTextCursor& c) { c.deleteChar(); }) << u""_s;
 
         QTest::newRow("Backspace joins two lines")
             << u"one\ntwo"_s << Edit([](QTextCursor& c) {
@@ -398,12 +393,10 @@ private slots:
                })
             << u"a"_s + lineSeparator_() + u"b"_s;
 
-        QTest::newRow("type an emoji")
-            << u"ab"_s << Edit([](QTextCursor& c) {
-                   c.setPosition(1);
-                   c.insertText(emoji_());
-               })
-            << u"a"_s + emoji_() + u"b"_s;
+        QTest::newRow("type an emoji") << u"ab"_s << Edit([](QTextCursor& c) {
+            c.setPosition(1);
+            c.insertText(emoji_());
+        }) << u"a"_s + emoji_() + u"b"_s;
 
         QTest::newRow("Backspace over an emoji")
             << u"a"_s + emoji_() + u"b"_s << Edit([](QTextCursor& c) {

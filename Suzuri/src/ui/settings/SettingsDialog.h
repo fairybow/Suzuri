@@ -60,7 +60,7 @@ namespace Suzuri::Ui {
 // Built once per VaultWindow, on first use, and hidden rather than destroyed
 // on close, so it reopens on the page last viewed — as Obsidian's does within
 // a session. It borrows the Vault, the same object the window borrows; pages
-// edit settings through the Vault's setters, which apply and save them. No
+// edit settings through Vault::setConfig, which applies and saves them. No
 // setting-changed signal leaves the dialog
 class SettingsDialog : public QDialog
 {

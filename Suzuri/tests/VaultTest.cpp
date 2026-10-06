@@ -30,6 +30,7 @@
 #include <Coco/Path.h>
 
 #include "core/Vault.h"
+#include "core/VaultConfig.h"
 #include "models/AbstractFileModel.h"
 #include "models/ImageFileModel.h"
 #include "models/PdfFileModel.h"
@@ -39,6 +40,7 @@ using namespace Qt::StringLiterals;
 using Suzuri::AbstractFileModel;
 using Suzuri::TextFileModel;
 using Suzuri::Vault;
+using Suzuri::VaultConfig;
 
 // What a Vault does with files and their buffers (core/Vault.h), for
 // everything that happens at once: opening, creating, renaming, moving,
@@ -752,8 +754,7 @@ private slots:
         auto* model = f.open(u"a.txt"_s);
         QVERIFY(model);
 
-        auto moved =
-            f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"one"_s));
+        auto moved = f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"one"_s));
 
         QCOMPARE(moved, Coco::Path("one/a.txt"));
         QVERIFY(!f.exists(u"a.txt"_s));
@@ -781,8 +782,7 @@ private slots:
         auto* model = f.open(u"one/two/a.txt"_s);
         QVERIFY(model);
 
-        auto moved =
-            f.vault.move(f.absolute(u"one"_s), f.absolute(u"other"_s));
+        auto moved = f.vault.move(f.absolute(u"one"_s), f.absolute(u"other"_s));
 
         QCOMPARE(moved, Coco::Path("other/one"));
         QCOMPARE(model->fileRef().relative, Coco::Path("other/one/two/a.txt"));
@@ -797,9 +797,8 @@ private slots:
 
         QVERIFY(
             f.vault.move(f.absolute(u"one"_s), f.absolute(u"one"_s)).isEmpty());
-        QVERIFY(
-            f.vault.move(f.absolute(u"one"_s), f.absolute(u"one/two"_s))
-                .isEmpty());
+        QVERIFY(f.vault.move(f.absolute(u"one"_s), f.absolute(u"one/two"_s))
+                    .isEmpty());
 
         QVERIFY(f.exists(u"one/two/a.txt"_s));
     }
@@ -810,9 +809,8 @@ private slots:
         f.write(u"a.txt"_s, "top");
         f.write(u"one/a.txt"_s, "inner");
 
-        QVERIFY(
-            f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"one"_s))
-                .isEmpty());
+        QVERIFY(f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"one"_s))
+                    .isEmpty());
 
         QCOMPARE(f.read(u"a.txt"_s), QByteArray("top"));
         QCOMPARE(f.read(u"one/a.txt"_s), QByteArray("inner"));
@@ -824,12 +822,10 @@ private slots:
         f.write(u"a.txt"_s, "a");
         f.write(u"b.txt"_s, "b");
 
-        QVERIFY(
-            f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"b.txt"_s))
-                .isEmpty());
-        QVERIFY(
-            f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"gone"_s))
-                .isEmpty());
+        QVERIFY(f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"b.txt"_s))
+                    .isEmpty());
+        QVERIFY(f.vault.move(f.absolute(u"a.txt"_s), f.absolute(u"gone"_s))
+                    .isEmpty());
 
         QVERIFY(f.exists(u"a.txt"_s));
     }
@@ -851,9 +847,8 @@ private slots:
                 .isEmpty());
 
         // Into the vault
-        QVERIFY(
-            f.vault.move(Coco::Path(elsewhere.filePath(u"b.txt"_s)), f.root)
-                .isEmpty());
+        QVERIFY(f.vault.move(Coco::Path(elsewhere.filePath(u"b.txt"_s)), f.root)
+                    .isEmpty());
 
         QVERIFY(f.exists(u"a.txt"_s));
         QVERIFY(!f.exists(u"b.txt"_s));
@@ -1044,13 +1039,15 @@ private slots:
             QSignalSpy changed(&vault, &Vault::configChanged);
 
             auto size = vault.config().textFontSize() + 3;
-            vault.setTextFontSize(size);
-            vault.setWrapLines(!vault.config().wrapLines());
+            vault.setConfig(&VaultConfig::setTextFontSize, size);
+            vault.setConfig(
+                &VaultConfig::setWrapLines,
+                !vault.config().wrapLines());
 
             QCOMPARE(changed.count(), 2);
 
             // Setting what is already set is no change
-            vault.setTextFontSize(size);
+            vault.setConfig(&VaultConfig::setTextFontSize, size);
             QCOMPARE(changed.count(), 2);
 
             vault.flush();
@@ -1061,10 +1058,10 @@ private slots:
 
         QCOMPARE(
             reopened.config().textFontSize(),
-            Suzuri::VaultConfig::DEFAULT_TEXT_FONT_SIZE + 3);
+            VaultConfig::DEFAULT_TEXT_FONT_SIZE + 3);
         QCOMPARE(
             reopened.config().wrapLines(),
-            !Suzuri::VaultConfig::DEFAULT_WRAP_LINES);
+            !VaultConfig::DEFAULT_WRAP_LINES);
     }
 
     // --- Trash refusals -----------------------------------------------------

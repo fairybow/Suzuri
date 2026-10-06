@@ -22,6 +22,7 @@
 #include <Coco/Debug.h>
 
 #include "core/Vault.h"
+#include "core/VaultConfig.h"
 #include "ui/UiConstants.h"
 #include "ui/settings/SettingRow.h"
 #include "ui/widgets/ToggleSwitch.h"
@@ -89,12 +90,12 @@ protected:
     };
 
     // One on/off setting: a row holding a switch seeded with checked, each
-    // flip going to the given Vault setter
+    // flip going to the given VaultConfig setter, through the Vault
     SwitchRow addSwitch(
         const QString& name,
         const QString& description,
         bool checked,
-        void (Vault::*setter)(bool))
+        bool (VaultConfig::*setter)(bool))
     {
         auto* toggle = new ToggleSwitch(content_);
         toggle->setChecked(checked);
@@ -103,7 +104,7 @@ protected:
             &QAbstractButton::toggled,
             this,
             [this, setter](bool now_checked) {
-                (vault_->*setter)(now_checked);
+                vault_->setConfig(setter, now_checked);
             });
 
         return { toggle, addRow(name, description, toggle) };

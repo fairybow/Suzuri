@@ -27,7 +27,7 @@
 
 // Per-vault configuration — the committed files in <vaultRoot>/.suzuri/, the
 // vault-local counterpart of AppConfig. Owned by Vault as a plain by-value
-// member; the settings dialog edits it through the Vault's setters, never
+// member; the settings dialog edits it through Vault::setConfig, never
 // directly, so every change is announced and saved.
 //
 // The same shape as AppConfig: a plain value type, not a QObject, whose getters

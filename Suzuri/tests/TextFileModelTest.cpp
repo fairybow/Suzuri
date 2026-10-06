@@ -94,7 +94,9 @@ private slots:
         QTest::newRow("BOM alone") << QByteArray("\xEF\xBB\xBF");
 
         // U+FEFF past the start is a character, not a mark
-        QTest::newRow("U+FEFF inside") << QByteArray("a\xEF\xBB\xBF" "b");
+        QTest::newRow("U+FEFF inside") << QByteArray(
+            "a\xEF\xBB\xBF"
+            "b");
 
         QTest::newRow("tabs and trailing spaces")
             << QByteArray("a\t b  \n\t\n");
@@ -104,24 +106,40 @@ private slots:
         QTest::newRow("emoji") << QByteArray("\xF0\x9F\x93\x81\n");
 
         // Characters a plain-text widget's own text accessor rewrites
-        QTest::newRow("no-break space") << QByteArray("a\xC2\xA0" "b\n");
-        QTest::newRow("line separator U+2028")
-            << QByteArray("a\xE2\x80\xA8" "b\n");
+        QTest::newRow("no-break space") << QByteArray(
+            "a\xC2\xA0"
+            "b\n");
+        QTest::newRow("line separator U+2028") << QByteArray(
+            "a\xE2\x80\xA8"
+            "b\n");
 
         // A replacement character already in the file is ordinary text
-        QTest::newRow("U+FFFD") << QByteArray("a\xEF\xBF\xBD" "b\n");
+        QTest::newRow("U+FFFD") << QByteArray(
+            "a\xEF\xBF\xBD"
+            "b\n");
 
-        QTest::newRow("soft hyphen") << QByteArray("a\xC2\xAD" "b\n");
-        QTest::newRow("zero-width joiner") << QByteArray("a\xE2\x80\x8D" "b\n");
-        QTest::newRow("next line U+0085") << QByteArray("a\xC2\x85" "b\n");
-        QTest::newRow("object replacement U+FFFC")
-            << QByteArray("a\xEF\xBF\xBC" "b\n");
+        QTest::newRow("soft hyphen") << QByteArray(
+            "a\xC2\xAD"
+            "b\n");
+        QTest::newRow("zero-width joiner") << QByteArray(
+            "a\xE2\x80\x8D"
+            "b\n");
+        QTest::newRow("next line U+0085") << QByteArray(
+            "a\xC2\x85"
+            "b\n");
+        QTest::newRow("object replacement U+FFFC") << QByteArray(
+            "a\xEF\xBF\xBC"
+            "b\n");
 
         // Control characters
         QTest::newRow("form feed") << QByteArray("a\fb\n");
         QTest::newRow("vertical tab") << QByteArray("a\vb\n");
-        QTest::newRow("escape") << QByteArray("a\x1B" "b\n");
-        QTest::newRow("delete") << QByteArray("a\x7F" "b\n");
+        QTest::newRow("escape") << QByteArray(
+            "a\x1B"
+            "b\n");
+        QTest::newRow("delete") << QByteArray(
+            "a\x7F"
+            "b\n");
         QTest::newRow("NUL") << QByteArray("a\0b\n", 4);
     }
 
@@ -146,29 +164,35 @@ private slots:
         QTest::addColumn<QByteArray>("expected");
 
         // A bare CR is a break, and saves as the file's line ending
-        QTest::newRow("bare CR") << QByteArray("one\rtwo")
-                                 << QByteArray("one\ntwo");
-        QTest::newRow("LF then CR") << QByteArray("a\n\rb")
-                                    << QByteArray("a\n\nb");
+        QTest::newRow("bare CR")
+            << QByteArray("one\rtwo") << QByteArray("one\ntwo");
+        QTest::newRow("LF then CR")
+            << QByteArray("a\n\rb") << QByteArray("a\n\nb");
 
         // The first LF decides the file's line ending: CRLF if a CR comes
         // before it. Every break is then saved that way
-        QTest::newRow("CRLF then LF") << QByteArray("a\r\nb\nc")
-                                      << QByteArray("a\r\nb\r\nc");
-        QTest::newRow("LF then CRLF") << QByteArray("a\nb\r\nc")
-                                      << QByteArray("a\nb\nc");
-        QTest::newRow("bare CR then CRLF") << QByteArray("a\rb\r\nc")
-                                           << QByteArray("a\r\nb\r\nc");
-        QTest::newRow("CR CR LF") << QByteArray("a\r\r\nb")
-                                  << QByteArray("a\r\n\r\nb");
+        QTest::newRow("CRLF then LF")
+            << QByteArray("a\r\nb\nc") << QByteArray("a\r\nb\r\nc");
+        QTest::newRow("LF then CRLF")
+            << QByteArray("a\nb\r\nc") << QByteArray("a\nb\nc");
+        QTest::newRow("bare CR then CRLF")
+            << QByteArray("a\rb\r\nc") << QByteArray("a\r\nb\r\nc");
+        QTest::newRow("CR CR LF")
+            << QByteArray("a\r\r\nb") << QByteArray("a\r\n\r\nb");
 
         // Three characters the text document itself reads as a break: the
         // paragraph separator, and two values it reserves for its own use
-        QTest::newRow("paragraph separator U+2029")
-            << QByteArray("a\xE2\x80\xA9" "b\n") << QByteArray("a\nb\n");
-        QTest::newRow("U+FDD0") << QByteArray("a\xEF\xB7\x90" "b\n")
+        QTest::newRow("paragraph separator U+2029") << QByteArray(
+                                                           "a\xE2\x80\xA9"
+                                                           "b\n")
+                                                    << QByteArray("a\nb\n");
+        QTest::newRow("U+FDD0") << QByteArray(
+                                       "a\xEF\xB7\x90"
+                                       "b\n")
                                 << QByteArray("a\nb\n");
-        QTest::newRow("U+FDD1") << QByteArray("a\xEF\xB7\x91" "b\n")
+        QTest::newRow("U+FDD1") << QByteArray(
+                                       "a\xEF\xB7\x91"
+                                       "b\n")
                                 << QByteArray("a\nb\n");
     }
 
@@ -199,7 +223,10 @@ private slots:
         QTest::newRow("two-byte") << QByteArray("caf\xC3\xA9") << true;
         QTest::newRow("three-byte") << QByteArray("\xE6\x97\xA5") << true;
         QTest::newRow("four-byte") << QByteArray("\xF0\x9F\x93\x81") << true;
-        QTest::newRow("BOM") << QByteArray("\xEF\xBB\xBF" "a") << true;
+        QTest::newRow("BOM") << QByteArray(
+                                    "\xEF\xBB\xBF"
+                                    "a")
+                             << true;
         QTest::newRow("NUL") << QByteArray("a\0b", 3) << true;
 
         // A file may hold a replacement character and still be valid
@@ -268,17 +295,17 @@ private slots:
         QTest::addColumn<QByteArray>("bytes");
         QTest::addColumn<QByteArray>("expected");
 
-        QTest::newRow("LF") << QByteArray("one\n")
-                            << QByteArray("one\ntwo\nthree");
-        QTest::newRow("CRLF") << QByteArray("one\r\n")
-                              << QByteArray("one\r\ntwo\r\nthree");
+        QTest::newRow("LF")
+            << QByteArray("one\n") << QByteArray("one\ntwo\nthree");
+        QTest::newRow("CRLF")
+            << QByteArray("one\r\n") << QByteArray("one\r\ntwo\r\nthree");
         QTest::newRow("BOM, CRLF")
             << QByteArray("\xEF\xBB\xBFone\r\n")
             << QByteArray("\xEF\xBB\xBFone\r\ntwo\r\nthree");
 
         // A file with no break yet is LF
-        QTest::newRow("no break yet") << QByteArray("one")
-                                      << QByteArray("onetwo\nthree");
+        QTest::newRow("no break yet")
+            << QByteArray("one") << QByteArray("onetwo\nthree");
         QTest::newRow("empty") << QByteArray("") << QByteArray("two\nthree");
     }
 
@@ -405,11 +432,21 @@ private slots:
         TextFileModel model(fileRef_(), nullptr);
         model.setData("a\nb\n");
 
-        model.reloadContent("\xEF\xBB\xBF" "c\r\nd\r\n");
-        QCOMPARE(model.data(), QByteArray("\xEF\xBB\xBF" "c\r\nd\r\n"));
+        model.reloadContent(
+            "\xEF\xBB\xBF"
+            "c\r\nd\r\n");
+        QCOMPARE(
+            model.data(),
+            QByteArray(
+                "\xEF\xBB\xBF"
+                "c\r\nd\r\n"));
 
         model.undo();
-        QCOMPARE(model.data(), QByteArray("\xEF\xBB\xBF" "a\r\nb\r\n"));
+        QCOMPARE(
+            model.data(),
+            QByteArray(
+                "\xEF\xBB\xBF"
+                "a\r\nb\r\n"));
     }
 };
 

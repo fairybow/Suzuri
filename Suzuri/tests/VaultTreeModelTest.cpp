@@ -175,13 +175,14 @@ private slots:
 
         QCOMPARE(
             f.rows(),
-            QStringList({ u"Drafts"_s,
-                          u"notes"_s,
-                          u"Apple"_s,
-                          u"banana"_s,
-                          u"chapter 2"_s,
-                          u"chapter 10"_s,
-                          u"cherry"_s }));
+            QStringList(
+                { u"Drafts"_s,
+                  u"notes"_s,
+                  u"Apple"_s,
+                  u"banana"_s,
+                  u"chapter 2"_s,
+                  u"chapter 10"_s,
+                  u"cherry"_s }));
     }
 
     // A file shows without its extension. A folder shows whole, since a

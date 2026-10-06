@@ -62,7 +62,9 @@ private:
         // carries "(not installed)", and its data is the bare name
         auto* family = new FontFamilyBox(config.textFontFamily(), content());
         connect(family, &QComboBox::currentIndexChanged, this, [this, family] {
-            vault()->setTextFontFamily(family->family());
+            vault()->setConfig(
+                &VaultConfig::setTextFontFamily,
+                family->family());
         });
         addRow(
             tr("Text font"),
@@ -72,14 +74,14 @@ private:
         auto* bold = new ToggleSwitch(content());
         bold->setChecked(config.textFontBold());
         connect(bold, &QAbstractButton::toggled, this, [this](bool checked) {
-            vault()->setTextFontBold(checked);
+            vault()->setConfig(&VaultConfig::setTextFontBold, checked);
         });
         addRow(tr("Bold"), tr("Show the text font in bold."), bold);
 
         auto* italic = new ToggleSwitch(content());
         italic->setChecked(config.textFontItalic());
         connect(italic, &QAbstractButton::toggled, this, [this](bool checked) {
-            vault()->setTextFontItalic(checked);
+            vault()->setConfig(&VaultConfig::setTextFontItalic, checked);
         });
         addRow(tr("Italic"), tr("Show the text font in italics."), italic);
 
@@ -90,7 +92,7 @@ private:
             config.textFontSize(),
             content());
         connect(size, &DisplaySlider::valueChanged, this, [this](int value) {
-            vault()->setTextFontSize(value);
+            vault()->setConfig(&VaultConfig::setTextFontSize, value);
         });
         addRow(tr("Font size"), tr("The text font's size, in points."), size);
     }

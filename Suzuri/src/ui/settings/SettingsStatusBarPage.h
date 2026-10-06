@@ -20,6 +20,7 @@
 #include <Coco/Debug.h>
 
 #include "core/Vault.h"
+#include "core/VaultConfig.h"
 #include "ui/settings/SettingRow.h"
 #include "ui/settings/SettingsPage.h"
 #include "ui/widgets/ToggleSwitch.h"
@@ -68,7 +69,7 @@ private:
             tr("Show word counter"),
             tr("Count the active text file in the status bar."),
             config.wordCounterEnabled(),
-            &Vault::setWordCounterEnabled);
+            &VaultConfig::setWordCounterEnabled);
 
         QList<SettingRow*> parts{};
 
@@ -76,21 +77,21 @@ private:
                      tr("Words"),
                      tr("Show the number of words."),
                      config.wordCounterWords(),
-                     &Vault::setWordCounterWords)
+                     &VaultConfig::setWordCounterWords)
                      .row;
 
         parts << addSwitch(
                      tr("Characters"),
                      tr("Show the number of characters, spaces included."),
                      config.wordCounterCharacters(),
-                     &Vault::setWordCounterCharacters)
+                     &VaultConfig::setWordCounterCharacters)
                      .row;
 
         parts << addSwitch(
                      tr("Lines"),
                      tr("Show the number of lines."),
                      config.wordCounterLines(),
-                     &Vault::setWordCounterLines)
+                     &VaultConfig::setWordCounterLines)
                      .row;
 
         parts << addSwitch(
@@ -98,7 +99,7 @@ private:
                      tr("While text is selected, show its counts against "
                         "the file's, as \"12 of 1,234 words\"."),
                      config.wordCounterSelection(),
-                     &Vault::setWordCounterSelection)
+                     &VaultConfig::setWordCounterSelection)
                      .row;
 
         enableWith_(item.toggle, parts);
@@ -114,7 +115,7 @@ private:
             tr("Show cursor position"),
             tr("Show where the text cursor is in the status bar."),
             config.cursorPositionEnabled(),
-            &Vault::setCursorPositionEnabled);
+            &VaultConfig::setCursorPositionEnabled);
 
         QList<SettingRow*> parts{};
 
@@ -122,7 +123,7 @@ private:
                      tr("Line"),
                      tr("Show the line number."),
                      config.cursorPositionLine(),
-                     &Vault::setCursorPositionLine)
+                     &VaultConfig::setCursorPositionLine)
                      .row;
 
         parts << addSwitch(
@@ -130,7 +131,7 @@ private:
                      tr("Show the column: the cursor's character within "
                         "its line."),
                      config.cursorPositionColumn(),
-                     &Vault::setCursorPositionColumn)
+                     &VaultConfig::setCursorPositionColumn)
                      .row;
 
         enableWith_(item.toggle, parts);
