@@ -84,7 +84,7 @@ git push origin v0.0.0-beta.0
 
 ---
 
-# Release Notes Template
+# Release Entry Template
 
 ```
 # 0.0.0-beta.0 (Testing / Soft Release) - tag v0.0.0-beta.0
@@ -101,6 +101,33 @@ git push origin v0.0.0-beta.0
 ---
 
 <a id="releases"></a>
+
+# 0.1.0-beta.0 (Find and Replace) - tag v0.1.0-beta.0
+
+## What's New?
+
+Suzuri can now find and replace text in a file.
+
+- **Ctrl+F** opens a find bar across the top of the text. Matches are highlighted as you type, and the bar shows which one you're on and how many there are
+- **Ctrl+H** opens it with a second row for replacing. The arrow at the left of the bar shows or hides that row
+- Enter or F3 goes to the next match, Shift+Enter or Shift+F3 to the previous
+- **Match case** and **Whole word** narrow the search. Whole word leaves longer words alone, so replacing "fart" won't touch "farthing"
+- **Replace all** changes every match at once, and one undo takes it all back
+- Each tab has its own find bar, so two panes on the same file can search for different things
+
+The search is for plain text in one file. Patterns and searching a whole vault aren't built yet.
+
+Also in this release:
+
+- The README now has a screenshot, a feature list, and build instructions
+
+## Known Issues
+
+- Focus doesn't always land in the editor after dragging a tab or restoring a session
+- Pop-out windows can reopen behind their vault window
+- macOS and Linux builds are not well-tested
+
+---
 
 # 0.0.0-beta.1 (Soft Release) - tag v0.0.0-beta.1
 
