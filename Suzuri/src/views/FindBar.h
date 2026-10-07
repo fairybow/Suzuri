@@ -122,6 +122,19 @@ public:
     {
         replaceRow_->setVisible(shown);
 
+        // Showing a widget redoes the layouts above it at once. Hiding one
+        // leaves them for later passes of the event loop, one layout per
+        // pass, and the bar is painted at its old height in between. Redo
+        // this layout and the hosting view's now. (There is no layout yet
+        // when setup_ first hides the row)
+        if (!shown && layout()) {
+            layout()->activate();
+
+            if (auto* host = parentWidget(); host && host->layout()) {
+                host->layout()->activate();
+            }
+        }
+
         toggleReplace_->setGlyphPath(
             shown ? u":/lucide/ChevronDown.svg"_s
                   : u":/lucide/ChevronRight.svg"_s);
