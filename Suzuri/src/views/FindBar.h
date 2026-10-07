@@ -38,9 +38,10 @@ using namespace Qt::StringLiterals;
 
 namespace Internal {
 
-// One of the find bar's glyph buttons: previous, next, or close. A GlyphButton
-// with a fixed glyph. It takes no focus, so a click leaves the caret in the
-// search field
+// One of the find bar's glyph buttons: the toggle for the row to replace
+// with, previous, next, or close. A GlyphButton whose glyph its owner sets;
+// only the toggle's ever changes. It takes no focus, so a click leaves the
+// caret in the field it was in
 class FindBarButton_ : public Ui::GlyphButton
 {
     Q_OBJECT
@@ -54,6 +55,12 @@ public:
         , glyphPath_(glyphPath)
     {
         setFocusPolicy(Qt::NoFocus);
+    }
+
+    void setGlyphPath(const Coco::Path& glyphPath)
+    {
+        glyphPath_ = glyphPath;
+        update();
     }
 
 protected:
@@ -71,10 +78,10 @@ private:
 } // namespace Internal
 
 // The controls a text view shows across its top while searching. One row to
-// find: the search field, previous and next, the two options, how many
-// matches there are and which one the search is on, and close. Under it, when
-// asked for, a row to replace: the replacement field, Replace, and Replace
-// all.
+// find: a toggle for the second row, the search field, previous and next, the
+// two options, how many matches there are and which one the search is on, and
+// close. Under it, when asked for or toggled open, a row to replace: the
+// replacement field, Replace, and Replace all.
 //
 // It holds what the user typed and chose, and says when that changes or when a
 // button is pressed. It searches and replaces nothing and knows nothing of the
@@ -108,8 +115,19 @@ public:
 
     [[nodiscard]] QString replacement() const { return replacement_->text(); }
 
-    // Show or hide the row to replace with
-    void setReplaceShown(bool shown) { replaceRow_->setVisible(shown); }
+    // Show or hide the row to replace with. The toggle points down while the
+    // row is open and right while it is closed, and its tooltip says what a
+    // click will do
+    void setReplaceShown(bool shown)
+    {
+        replaceRow_->setVisible(shown);
+
+        toggleReplace_->setGlyphPath(
+            shown ? u":/lucide/ChevronDown.svg"_s
+                  : u":/lucide/ChevronRight.svg"_s);
+        toggleReplace_->setToolTip(
+            shown ? tr("Hide replace") : tr("Show replace"));
+    }
 
     // Put the caret in the search field with its text selected, so typing
     // replaces it
@@ -189,6 +207,8 @@ protected:
     }
 
 private:
+    Internal::FindBarButton_* toggleReplace_ =
+        new Internal::FindBarButton_(u":/lucide/ChevronRight.svg"_s, this);
     QLineEdit* term_ = new QLineEdit(this);
     QLabel* count_ = new QLabel(this);
     Internal::FindBarButton_* previous_ =
@@ -227,6 +247,7 @@ private:
         // and the two fields come out the same width
         auto* find_row = new QHBoxLayout{};
         find_row->setSpacing(FIND_BAR_SPACING);
+        find_row->addWidget(toggleReplace_);
         find_row->addWidget(term_, 1);
         find_row->addWidget(previous_);
         find_row->addWidget(next_);
@@ -239,12 +260,17 @@ private:
         auto* replace_row = new QHBoxLayout(replaceRow_);
         replace_row->setContentsMargins(0, 0, 0, 0);
         replace_row->setSpacing(FIND_BAR_SPACING);
+
+        // The width of the toggle and the gap after it, so the replacement
+        // field sits under the search field. A layout puts no gap of its own
+        // beside a spacer
+        replace_row->addSpacing(FIND_BAR_BUTTON_EXTENT + FIND_BAR_SPACING);
         replace_row->addWidget(replacement_, 1);
         replace_row->addWidget(replace_);
         replace_row->addWidget(replaceAll_);
         replace_row->addStretch(0);
 
-        replaceRow_->hide();
+        setReplaceShown(false);
 
         auto* layout = new QVBoxLayout(this);
         layout->setContentsMargins(
@@ -255,6 +281,10 @@ private:
         layout->setSpacing(FIND_BAR_SPACING);
         layout->addLayout(find_row);
         layout->addWidget(replaceRow_);
+
+        connect(toggleReplace_, &QAbstractButton::clicked, this, [this] {
+            setReplaceShown(replaceRow_->isHidden());
+        });
 
         connect(term_, &QLineEdit::textChanged, this, [this] {
             emit searchChanged();
