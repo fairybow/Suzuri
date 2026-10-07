@@ -1,6 +1,6 @@
 # Features
 
-Current version: v0.0.0-beta.1
+Current version: v0.0.0-beta.2
 
 What Suzuri does today. For what is planned, undecided, or deliberately left out, see [Future.md](Future.md). For how it is built, see [Architecture.md](Architecture.md).
 
@@ -122,6 +122,21 @@ Plain text. Suzuri does not render Markdown or Fountain; those files are edited 
 - Selection handles: a draggable handle under each end of a selection
 - Font family, size, bold, and italic for the text. Courier Prime, Literata (the default), mononoki, and OpenDyslexic are bundled
 
+## Find and replace
+
+Ctrl+F opens a find bar across the top of the text, and Ctrl+H opens it with a second row to replace with. The arrow at the left of the bar shows or hides that row. Each tab has its own bar: two panes on one file can search for different things.
+
+- Matches are highlighted as you type, and the search goes to the first one at or after the cursor. The bar shows which match it is on and how many there are ("3 of 17")
+- Enter or F3 goes to the next match, Shift+Enter or Shift+F3 to the previous. Both wrap around the ends of the file
+- Opening the bar with text selected on one line searches for that text
+- **Match case** and **Whole word** narrow the search. Whole word leaves longer words alone: "Al" is not found in "Although"
+- The search is for the text as typed, with no wildcards. A space also matches a no-break space, and the other way round
+- **Replace** changes the match the search is on and moves to the next. If the cursor is not on a match, the first press only moves to one
+- **Replace all** changes every match at once and says how many. One undo takes it all back
+- Highlights follow the text as it changes, and stay until the bar is closed
+- Esc closes the bar and leaves the last match selected
+- A search covers the one file. Nothing about it is saved
+
 ## PDFs and images
 
 Read-only views.
@@ -175,6 +190,9 @@ The list of known vaults is kept outside any vault, in Suzuri's application data
 | Go to file | Ctrl+O |
 | Settings | Ctrl+, |
 | Undo / Redo | Ctrl+Z / Ctrl+Y |
+| Find | Ctrl+F |
+| Find and replace | Ctrl+H |
+| Next / previous match | F3 / Shift+F3 |
 | Zoom in / out / reset | Ctrl+= / Ctrl+- / Ctrl+0 |
 | Show or hide the menu bar | Ctrl+M |
 | Quit | Ctrl+Q |
@@ -191,6 +209,7 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - **A dropped file opens.** A file dragged onto an editor opens there; in Obsidian it inserts a link
 - **Bold and italic font settings**, since there is no Markdown styling to carry emphasis
 - **A margin setting** in place of "Readable line length", and a switch to turn wrapping off
+- **Find has Match case and Whole word.** Obsidian's search in a file has neither. Suzuri's highlights also stay while you edit, until the bar is closed
 - **TIFF images** are supported. SVG and AVIF are not
 - **Images zoom**, like PDFs
 - **File and folder icons** in the file tree

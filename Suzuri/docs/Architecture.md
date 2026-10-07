@@ -31,7 +31,7 @@ Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.c
 | `src/` | `Main.cpp`, `App`, and the log window |
 | `core/` | `Vault`, the vault tree model, configuration, file IO, file types, action ids |
 | `models/` | One buffer class per file type, and the prime document |
-| `views/` | One view class per file type, and the parts only views use: the text editor with its selection handles, and the zoom control with its state |
+| `views/` | One view class per file type, and the parts only views use: the text editor with its selection handles, the find bar and the search functions behind it, and the zoom control with its state |
 | `ui/` | The windows and what they open directly: workspace persistence, Go to File, the vault picker, the status bar items |
 | `ui/tabs/` | The split tree, its leaves, the tab bar and its buttons, the new-tab page |
 | `ui/sidebar/` | The sidebar, the file trees, the common drawer, the vault switcher |
@@ -231,6 +231,7 @@ So each text view owns a document of its own, and the buffer owns one more, the 
 - Undo lives on the prime alone. View documents have undo disabled; otherwise each view would undo only its own edits and the views would drift apart. The editor gives up the undo and redo keys so the window's actions handle them, and those actions reach the active view's buffer.
 - A reload is its own undo step. Qt folds an insertion into the one before it when the two touch and the document is marked modified, so text typed at the end of reloaded text would otherwise undo together with the reload. `TextFileModel` clears the modified flag straight after a reload, because the buffer matches disk again, and that is also what keeps the two apart.
 - After every routed change the prime checks each view's document against its own and resets one that differs, since the prime is what gets saved. Every build compares lengths; a debug build compares the text too. Nothing known causes a difference.
+- Find and replace work in one view's document. A replacement is an edit there like any other, so it reaches the prime and the other views the same way. Replace all is one edit block, which a document reports as one change, so it is one undo step.
 - Text is read from a document through a lossless path. Qt's plain-text accessor rewrites no-break spaces and some separators, which would silently change a file on its first save.
 
 ## Saving
@@ -436,6 +437,8 @@ Each of these was built or seriously considered. They are recorded so they aren'
 - **A separate object tracking views per buffer.** The buffer already is that record, and the vault's map already is the registry.
 - **A central table of hotkeys consulted when actions are created.** A window created before a rebind would keep its old keys either way. Defaults stay where each action is created, and a rebinding layer will walk each window's registry.
 - **A table of settings in `VaultConfig`** (rows of key, type, default, and range, read by key). It would remove the per-setting getter, setter, and read and write lines, but callers would lose typed getters like `config.lineNumbers()`, and the file as it stands is long but plain.
+- **Search highlights as the editor's extra selections.** Qt checks every extra selection against every paragraph and line it paints, so the cost grows faster than the number in view, and a single letter matches hundreds of times on a screen of prose. The editor paints one rectangle per visible match itself.
+- **`QTextDocument::find` for search.** It builds a cursor per match and took a hundred times as long as searching each line's text directly, on a common word in a long file. The search runs on every keystroke in the find field.
 - **`QSettings`.** The app-level data is structured, the vault files are meant to be read and diffed, and INI-style settings are what grew Hearth's tiered settings.
 - **A process-wide pixmap cache for icons.** A global store, against the no-singletons rule.
 - **Painting selection handles on an overlay widget.** Hearth's approach. The overlay had to be realigned with the editor on every update; painted by the editor, the handles scroll with the text.
