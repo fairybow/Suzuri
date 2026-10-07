@@ -23,6 +23,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] A vault whose root path is not plain (a trailing separator, a `.` or `..` segment) contains nothing by `Vault::contains`, so every create, rename, move, and delete in it is refused. The folder picker and the known-vaults list give plain paths; a root from the command line will need cleaning first
 - [ ] In a release build, `PrimeDocument` notices a view document out of step with the prime only when their lengths differ. An edit applied at the wrong position keeps the lengths equal and goes unnoticed until they diverge. A full comparison when a save reads the text would catch it before it reaches disk
 - [ ] When `PrimeDocument` resets a view that was out of step, that view's cursor goes to the start of the file
+- [ ] A pane whose files were all deleted between sessions is restored as an empty pane inside a split, where in use a pane closes with its last tab. `TabPaneTree::restore` builds the saved shape and prunes nothing. A split left with one child (by this, or by a hand-edited `workspace.json`) is kept the same way
 - [ ] On Windows, deleting a folder that a tree has listed, from outside Suzuri, logs Qt's "FindNextChangeNotification failed ... (Access is denied.)" once per watched folder. Harmless: the rows still go
 
 ## Before release
@@ -52,7 +53,7 @@ What the tests in `Suzuri/tests/` don't reach.
 - [ ] A successful `Vault::moveToTrash`. It would put a file in the real system trash on every run
 - [ ] `Vault::recreateRoot`
 - [ ] A file that starts with two byte-order marks. On Qt 6.4 one is dropped on load, which the comment on the mark in `TextFileModel.h` says can't happen. Check it on the Qt in use
-- [ ] `AppConfig`, `JsonIo`, `WorkspaceFile`, and everything in `views/` and `ui/`
+- [ ] `AppConfig`, `JsonIo`, `WorkspaceFile`, and everything in `views/` and `ui/`. Considered for `TabPaneTree`'s save and restore and left out: a mistake there costs a layout, not text, and shows on the next launch
 
 ## Audits
 
