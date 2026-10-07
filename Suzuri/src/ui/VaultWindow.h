@@ -438,6 +438,11 @@ private:
         auto* edit_menu = bar->addMenu(tr("Edit"));
         edit_menu->addAction(action(ActionIds::DOCUMENT_UNDO));
         edit_menu->addAction(action(ActionIds::DOCUMENT_REDO));
+        edit_menu->addSeparator();
+        edit_menu->addAction(action(ActionIds::VIEW_FIND));
+        edit_menu->addAction(action(ActionIds::VIEW_REPLACE));
+        edit_menu->addAction(action(ActionIds::VIEW_FIND_NEXT));
+        edit_menu->addAction(action(ActionIds::VIEW_FIND_PREVIOUS));
 
         auto* view_menu = bar->addMenu(tr("View"));
         view_menu->addAction(action(ActionIds::WINDOW_TOGGLE_MENU_BAR));

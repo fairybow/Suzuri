@@ -222,11 +222,13 @@ set(APP_HEADERS
     src/ui/WorkspaceFile.h
 
     src/views/AbstractFileView.h
+    src/views/FindBar.h
     src/views/ImageFileView.h
     src/views/PdfFileView.h
     src/views/SelectionHandles.h
     src/views/TextEditor.h
     src/views/TextFileView.h
+    src/views/TextSearch.h
     src/views/ViewConstants.h
     src/views/ZoomControl.h
     src/views/ZoomState.h

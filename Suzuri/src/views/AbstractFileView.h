@@ -77,6 +77,16 @@ public:
     virtual void zoomOut() {}
     virtual void zoomReset() {}
 
+    // Search within the file, dispatched to by the window's view.find*
+    // actions. No-ops on the base, as zoom is: a view with nothing to search
+    // (a PDF, an image) inherits these and does nothing. TextFileView
+    // overrides them. The search is one view's own, like its zoom: two views
+    // of a file search apart
+    virtual void showFind() {}
+    virtual void showReplace() {}
+    virtual void findNext() {}
+    virtual void findPrevious() {}
+
     // Per-view persistence into workspace.json's tab entry. Each view
     // reads/writes ONLY within the opaque "state" blob it's handed — the
     // workspace layer never inspects it (Obsidian's getState/setState shape).

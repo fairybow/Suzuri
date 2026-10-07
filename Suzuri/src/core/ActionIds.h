@@ -38,8 +38,9 @@ using namespace Qt::StringLiterals;
 //   window.     one window's own chrome
 //   view.       one view's presentation, per-view and not the buffer: zoom is
 //               view-local (two views of one PDF zoom independently), so it
-//               is named for the view, not document. Like document., a menu can
-//               move it without invalidating a persisted hotkey
+//               is named for the view, not document. A search is the same:
+//               each view has its own. Like document., a menu can move it
+//               without invalidating a persisted hotkey
 //   vault.      the vault as a whole, beyond any one file or folder in it — its
 //               settings. Per-window like file., since each window edits its
 //               own vault
@@ -65,6 +66,11 @@ inline const QString WINDOW_TOGGLE_MENU_BAR = u"window.toggleMenuBar"_s;
 inline const QString VIEW_ZOOM_IN = u"view.zoomIn"_s;
 inline const QString VIEW_ZOOM_OUT = u"view.zoomOut"_s;
 inline const QString VIEW_ZOOM_RESET = u"view.zoomReset"_s;
+
+inline const QString VIEW_FIND = u"view.find"_s;
+inline const QString VIEW_REPLACE = u"view.replace"_s;
+inline const QString VIEW_FIND_NEXT = u"view.findNext"_s;
+inline const QString VIEW_FIND_PREVIOUS = u"view.findPrevious"_s;
 
 inline const QString VAULT_OPEN_SETTINGS = u"vault.openSettings"_s;
 

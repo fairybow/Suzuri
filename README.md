@@ -42,11 +42,12 @@ Suzuri is early in development, and more features are planned. I expect to keep 
 - **Tabs, split panes, and pop-out windows.** The same file can be open in any number of them, in sync, with one undo history
 - **A Common Vault** shared by every project, for templates, notes, and reference material
 - **A file tree and Go to File** (Ctrl+O), with drag-and-drop moves and delete-to-trash
+- **Find and replace** in a file, with match case and whole word
 - **Changes made elsewhere are picked up.** A file edited in another program, by Git, or by a sync client reloads in place, as one undo step
 - **PDFs and images** open read-only beside your text
 - **A word counter**, bundled fonts for prose, and settings kept per vault
 
-Suzuri edits plain text. Markdown and Fountain files open as the text they are, with no rendering for now. There are no links, tags, or metadata, and find and replace and spellcheck aren't built yet.
+Suzuri edits plain text. Markdown and Fountain files open as the text they are, with no rendering for now. There are no links, tags, or metadata, and spellcheck isn't built yet.
 
 The full list is in [Features.md](Suzuri/docs/Features.md), and what's planned is in [Future.md](Suzuri/docs/Future.md).
 

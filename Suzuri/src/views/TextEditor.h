@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include <QChar>
 #include <QEvent>
 #include <QFont>
@@ -25,6 +27,7 @@
 #include <QPoint>
 #include <QPointF>
 #include <QRect>
+#include <QRectF>
 #include <QResizeEvent>
 #include <QString>
 #include <QTextBlock>
@@ -40,6 +43,7 @@
 #include <Coco/Debug.h>
 
 #include "views/SelectionHandles.h"
+#include "views/TextSearch.h"
 #include "views/ViewConstants.h"
 
 namespace Suzuri {
@@ -192,7 +196,16 @@ public:
         }
 
         lineHighlight_ = shown;
-        updateLineHighlight_();
+        updateExtraSelections_();
+    }
+
+    // What a search found, to tint (paintSearchMatches_). An empty list
+    // clears the tint. The list is in document order, as TextSearch::findAll
+    // gives it
+    void setSearchMatches(const QList<TextSearch::Match>& matches)
+    {
+        searchMatches_ = matches;
+        viewport()->update();
     }
 
     [[nodiscard]] bool doubleClickWhitespace() const noexcept
@@ -230,16 +243,17 @@ protected:
             updateViewportMargins_();
             updateTabStopDistance_();
         } else if (event->type() == QEvent::PaletteChange && lineHighlight_) {
-            updateLineHighlight_();
+            updateExtraSelections_();
         }
     }
 
-    // The selection handles are drawn over the text, so after it. This is
-    // the viewport's paint event (QAbstractScrollArea hands those here), and
-    // the base's painter is finished by the time it returns
+    // The search tint and the selection handles are drawn over the text, so
+    // after it. This is the viewport's paint event (QAbstractScrollArea hands
+    // those here), and the base's painter is finished by the time it returns
     void paintEvent(QPaintEvent* event) override
     {
         QPlainTextEdit::paintEvent(event);
+        paintSearchMatches_(event);
         selectionHandles_.paint();
     }
 
@@ -314,6 +328,7 @@ private:
     int tabWidth_ = 0;
 
     bool lineHighlight_ = false;
+    QList<TextSearch::Match> searchMatches_{};
     bool doubleClickWhitespace_ = false;
     SelectionHandles selectionHandles_{ this };
 
@@ -427,7 +442,7 @@ private:
     // QPlainTextEdit paints across the whole row that position is on. The
     // copy doesn't follow the text cursor, so this is rebuilt each time the
     // cursor moves (onCursorPositionChanged_)
-    void updateLineHighlight_()
+    void updateExtraSelections_()
     {
         QList<QTextEdit::ExtraSelection> selections{};
 
@@ -443,11 +458,91 @@ private:
         setExtraSelections(selections);
     }
 
+    // Tint each search match in view: a translucent rectangle over its text,
+    // one for each line the match is on. The match that is the selection is
+    // left alone, since the selection already marks it.
+    //
+    // Painted here and not given to the editor as extra selections. Painting
+    // those costs more than in proportion to how many are in view, and a
+    // single letter matches hundreds of times on a screen of prose. This costs
+    // one rectangle per match.
+    //
+    // Walks the visible blocks top-down as paintLineNumberArea_ does. The
+    // matches are in order, so the first in view is found by bisection and
+    // each block takes its own from where the last one stopped
+    void paintSearchMatches_(const QPaintEvent* event)
+    {
+        if (searchMatches_.isEmpty()) {
+            return;
+        }
+
+        QPainter painter(viewport());
+
+        auto tint = palette().color(SEARCH_MATCH_ROLE);
+        tint.setAlpha(SEARCH_MATCH_ALPHA);
+
+        auto selection = textCursor();
+        auto selection_start = selection.selectionStart();
+        auto selection_length = selection.selectionEnd() - selection_start;
+
+        auto block = firstVisibleBlock();
+        auto offset = contentOffset();
+
+        auto it = std::lower_bound(
+            searchMatches_.cbegin(),
+            searchMatches_.cend(),
+            block.position(),
+            [](const TextSearch::Match& match, int position) {
+                return match.position < position;
+            });
+
+        while (block.isValid() && it != searchMatches_.cend()) {
+            auto geometry = blockBoundingGeometry(block).translated(offset);
+            if (geometry.top() > event->rect().bottom()) {
+                break;
+            }
+
+            auto block_start = block.position();
+            auto block_end = block_start + block.length();
+            const auto* layout = block.layout();
+
+            for (; it != searchMatches_.cend() && it->position < block_end;
+                 ++it) {
+                if (!block.isVisible() || (it->position == selection_start &&
+                                           it->length == selection_length)) {
+                    continue;
+                }
+
+                auto start = it->position - block_start;
+                auto end = start + it->length;
+                auto line = layout->lineForTextPosition(start);
+
+                while (line.isValid() && line.textStart() < end) {
+                    auto line_end = line.textStart() + line.textLength();
+                    auto left = line.cursorToX(qMax(start, line.textStart()));
+                    auto right = line.cursorToX(qMin(end, line_end));
+
+                    painter.fillRect(
+                        QRectF(
+                            geometry.left() + left,
+                            geometry.top() + line.y(),
+                            right - left,
+                            line.height()),
+                        tint);
+
+                    line = layout->lineAt(line.lineNumber() + 1);
+                }
+            }
+
+            block = block.next();
+        }
+    }
+
     // Off, there is nothing to move, and nothing is rebuilt
     void onCursorPositionChanged_()
     {
         if (lineHighlight_) {
-            updateLineHighlight_();
+            updateExtraSelections_();
         }
     }
 

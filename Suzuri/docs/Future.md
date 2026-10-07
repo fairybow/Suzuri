@@ -25,7 +25,6 @@ Nothing here is a promise or a schedule.
 
 ### Editing
 
-- Find and replace
 - Spellcheck
 - Hearth's typing helpers: auto-closing pairs, delete-pair, skip-closer, and barging past closing punctuation
 
@@ -107,6 +106,8 @@ Committing a vault to a repository, for backup and history.
 - **Checking open files when Suzuri regains focus.** On some platforms a file whose folder was renamed outside Suzuri keeps its tab until typed into. A check on return would close it sooner
 - **Dragging a file out to the desktop** as a shortcut that opens it in its vault
 - **Detecting and converting older text encodings** (Windows-1252 and others), in place of the warning
+- **Patterns in Find** (regular expressions). Needs a way to show a pattern that doesn't parse, and a syntax for using what was matched in the replacement. Worth building if plain text with Whole word proves too blunt
+- **Searching the whole vault.** A separate feature from Find, with its own list of results. Obsidian's is a plugin of its own
 - **An overwrite toggle on the Insert key,** per editor, with a status bar indicator
 - **Drop zones that move.** While a tab is dragged over a pane's edge, the pane would shrink aside to show where the new pane will land
 - **Highlights and bookmarks** kept beside a file, not in it
