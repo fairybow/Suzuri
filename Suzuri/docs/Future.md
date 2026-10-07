@@ -117,7 +117,7 @@ Committing a vault to a repository, for backup and history.
 
 ## Not planned
 
-- **Links, backlinks, tags, and Markdown rendering.** Suzuri is for plain text. Without links there is nothing to index and nothing to rewrite when a file is renamed
+- **Links, backlinks, and tags.** Suzuri is for plain text. Without links there is nothing to index and nothing to rewrite when a file is renamed
 - **Unsaved documents and save prompts.** Every file is on disk and always saved. An untitled, in-memory document would bring back the prompts, the modified markers, and the recovery machinery this design removes
 - **Moving a vault from inside Suzuri.** Built once, for the Common Vault, then removed. On Windows other programs (the folder picker, the shell, the indexer, antivirus) hold handles on the folders being moved, and the old folders can't be deleted while they do. Suzuri can't release handles it doesn't own. Moving the folder in a file manager and opening it again does the same job
 - **Renaming the Common Vault.** Its location is fixed, and every window depends on it while Suzuri runs
@@ -137,4 +137,5 @@ Committing a vault to a repository, for backup and history.
 - **Autosave timing.** One second after typing stops and three seconds at most are working defaults, not settled numbers
 - **Git: bundle a library or call the installed `git`?** Calling it adds no dependency but requires Git on the machine and makes errors harder to read
 - **Sort order with hidden extensions.** Files sort by full name, so `a b.md` comes before `a.md` and the tree reads "a b", then "a". Whether to sort by the name shown is undecided
+- **Markdown rendering.** Not ruled out, and probably not the way Obsidian does it. What form it would take is undecided: styling in place with the markup left visible, a separate read-only preview, or something else. Whatever it is, the file stays plain text and is written back unchanged
 - **Folder links in the file tree.** The tree shows and expands symlinked folders; Go to File skips them. One of the two should change
