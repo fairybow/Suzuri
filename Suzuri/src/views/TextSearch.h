@@ -15,8 +15,10 @@
 #include <QChar>
 #include <QList>
 #include <QString>
+#include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QtTypes>
 
 // Finding text in a document, and replacing what was found. Free functions, so
 // what counts as a match is defined once and can be tested without an editor.
@@ -28,11 +30,9 @@
 // The term is literal text. A match lies within one line, and matches never
 // overlap: the search for the next one starts where the last one ended.
 //
-// A space and a no-break space match each other, in either direction.
-// QTextDocument::find reads every no-break space in the document as a space,
-// and findAll reads the term the same way; without that, a term holding a
-// no-break space would match nothing, the text it was copied from included.
-// Replacing writes the replacement as given
+// A space and a no-break space match each other, in either direction, so a
+// phrase is found whichever of the two its words are joined with. Replacing
+// writes the replacement as given
 namespace Suzuri::TextSearch {
 
 struct Options
@@ -52,7 +52,26 @@ struct Match
     int length = 0;
 };
 
-// Every match in the document, in order. An empty term matches nothing
+namespace Internal {
+
+// Whether text[start, end) touches no letter or digit on either side
+[[nodiscard]] inline bool
+isWholeWord_(const QString& text, qsizetype start, qsizetype end)
+{
+    if (start > 0 && text.at(start - 1).isLetterOrNumber()) {
+        return false;
+    }
+
+    return end >= text.size() || !text.at(end).isLetterOrNumber();
+}
+
+} // namespace Internal
+
+// Every match in the document, in order. An empty term matches nothing.
+//
+// Searches each line's text with QString::indexOf. QTextDocument::find gives
+// the same matches, but builds a cursor for each one and takes a hundred
+// times as long over a common word in a long file
 [[nodiscard]] inline QList<Match>
 findAll(const QTextDocument* document, const QString& term, Options options)
 {
@@ -62,27 +81,36 @@ findAll(const QTextDocument* document, const QString& term, Options options)
         return matches;
     }
 
-    QTextDocument::FindFlags flags{};
-
-    if (options.matchCase) {
-        flags |= QTextDocument::FindCaseSensitively;
-    }
-
-    if (options.wholeWord) {
-        flags |= QTextDocument::FindWholeWords;
-    }
-
     auto spaced_term = term;
     spaced_term.replace(QChar::Nbsp, QChar::Space);
 
-    auto found = document->find(spaced_term, 0, flags);
+    auto length = spaced_term.size();
+    auto sensitivity =
+        options.matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
 
-    while (!found.isNull()) {
-        auto start = found.selectionStart();
-        auto end = found.selectionEnd();
+    for (auto block = document->begin(); block.isValid();
+         block = block.next()) {
+        auto text = block.text();
+        text.replace(QChar::Nbsp, QChar::Space);
 
-        matches << Match{ start, end - start };
-        found = document->find(spaced_term, end, flags);
+        qsizetype from = 0;
+
+        while (true) {
+            auto index = text.indexOf(spaced_term, from, sensitivity);
+            if (index < 0) {
+                break;
+            }
+
+            if (options.wholeWord &&
+                !Internal::isWholeWord_(text, index, index + length)) {
+                from = index + 1;
+                continue;
+            }
+
+            matches << Match{ block.position() + static_cast<int>(index),
+                              static_cast<int>(length) };
+            from = index + length;
+        }
     }
 
     return matches;

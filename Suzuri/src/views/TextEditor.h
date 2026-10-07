@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include <QChar>
 #include <QEvent>
 #include <QFont>
@@ -40,6 +42,7 @@
 #include <Coco/Debug.h>
 
 #include "views/SelectionHandles.h"
+#include "views/TextSearch.h"
 #include "views/ViewConstants.h"
 
 namespace Suzuri {
@@ -152,6 +155,7 @@ public:
     {
         setLineWrapMode(
             wrapped ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+        updateExtraSelections_();
     }
 
     // Percent of the editor's width kept clear on each side of the text
@@ -192,7 +196,15 @@ public:
         }
 
         lineHighlight_ = shown;
-        updateLineHighlight_();
+        updateExtraSelections_();
+    }
+
+    // What a search found, to tint behind the text. An empty list clears the
+    // tint. The list is in document order, as TextSearch::findAll gives it
+    void setSearchMatches(const QList<TextSearch::Match>& matches)
+    {
+        searchMatches_ = matches;
+        updateExtraSelections_();
     }
 
     [[nodiscard]] bool doubleClickWhitespace() const noexcept
@@ -219,9 +231,9 @@ public:
 
 protected:
     // The base applies a new font to the document; the gutter's width and the
-    // tab width are measured in that font, so they follow. The line
-    // highlight's brush is read from the palette when it is built, so a new
-    // palette rebuilds it
+    // tab width are measured in that font, so they follow, and so do the
+    // lines in view. The extra selections' colors are read from the palette
+    // when they are built, so a new palette rebuilds them
     void changeEvent(QEvent* event) override
     {
         QPlainTextEdit::changeEvent(event);
@@ -229,8 +241,9 @@ protected:
         if (event->type() == QEvent::FontChange) {
             updateViewportMargins_();
             updateTabStopDistance_();
-        } else if (event->type() == QEvent::PaletteChange && lineHighlight_) {
-            updateLineHighlight_();
+            updateExtraSelections_();
+        } else if (event->type() == QEvent::PaletteChange) {
+            updateExtraSelections_();
         }
     }
 
@@ -300,6 +313,11 @@ protected:
     {
         updateViewportMargins_();
         QPlainTextEdit::resizeEvent(event);
+
+        // A new size puts different lines in view
+        if (!searchMatches_.isEmpty()) {
+            updateExtraSelections_();
+        }
     }
 
 private:
@@ -314,6 +332,7 @@ private:
     int tabWidth_ = 0;
 
     bool lineHighlight_ = false;
+    QList<TextSearch::Match> searchMatches_{};
     bool doubleClickWhitespace_ = false;
     SelectionHandles selectionHandles_{ this };
 
@@ -422,12 +441,19 @@ private:
         setTabStopDistance(tabWidth_ * metrics.horizontalAdvance(QChar(u' ')));
     }
 
-    // The editor's extra selections: the current-line band, or none. The band
-    // is a selection-less copy of the text cursor flagged full-width, which
-    // QPlainTextEdit paints across the whole row that position is on. The
-    // copy doesn't follow the text cursor, so this is rebuilt each time the
-    // cursor moves (onCursorPositionChanged_)
-    void updateLineHighlight_()
+    // The editor's extra selections: the current-line band, then the tint
+    // behind each search match in view, so a match on the current line shows
+    // over the band.
+    //
+    // The band is a selection-less copy of the text cursor flagged full-width,
+    // which QPlainTextEdit paints across the whole row that position is on.
+    // The copy doesn't follow the text cursor, so this is rebuilt each time
+    // the cursor moves (onCursorPositionChanged_).
+    //
+    // Only the matches in view are given a selection, and this is rebuilt when
+    // the view moves. A common word in a long file has thousands of matches,
+    // and setting that many selections takes tens of milliseconds each time
+    void updateExtraSelections_()
     {
         QList<QTextEdit::ExtraSelection> selections{};
 
@@ -440,14 +466,53 @@ private:
             selections << band;
         }
 
+        if (!searchMatches_.isEmpty()) {
+            appendSearchSelections_(selections);
+        }
+
         setExtraSelections(selections);
+    }
+
+    // One selection for each match that starts in a paragraph in view. The
+    // matches are in order, so the first is found by bisection and the walk
+    // stops at the first one past the last paragraph
+    void appendSearchSelections_(QList<QTextEdit::ExtraSelection>& selections)
+    {
+        auto first_position = firstVisibleBlock().position();
+
+        auto last_block =
+            cursorForPosition(viewport()->rect().bottomLeft()).block();
+        auto end_position = last_block.position() + last_block.length();
+
+        auto tint = palette().color(SEARCH_MATCH_ROLE);
+        tint.setAlpha(SEARCH_MATCH_ALPHA);
+
+        auto it = std::lower_bound(
+            searchMatches_.cbegin(),
+            searchMatches_.cend(),
+            first_position,
+            [](const TextSearch::Match& match, int position) {
+                return match.position < position;
+            });
+
+        for (; it != searchMatches_.cend() && it->position < end_position;
+             ++it) {
+            QTextEdit::ExtraSelection selection{};
+            selection.format.setBackground(tint);
+            selection.cursor = QTextCursor(document());
+            selection.cursor.setPosition(it->position);
+            selection.cursor.setPosition(
+                it->position + it->length,
+                QTextCursor::KeepAnchor);
+            selections << selection;
+        }
     }
 
     // Off, there is nothing to move, and nothing is rebuilt
     void onCursorPositionChanged_()
     {
         if (lineHighlight_) {
-            updateLineHighlight_();
+            updateExtraSelections_();
         }
     }
 
@@ -517,6 +582,11 @@ private:
     // does the same, so the numbers move and refresh with their lines
     void onUpdateRequest_(const QRect& rect, int deltaY)
     {
+        // A scroll puts different lines in view
+        if (deltaY != 0 && !searchMatches_.isEmpty()) {
+            updateExtraSelections_();
+        }
+
         if (!lineNumbers_) {
             return;
         }

@@ -376,6 +376,39 @@ private:
                 view->zoomReset();
             }
         });
+
+        // Find dispatches to the active view as zoom does, and is inert the
+        // same way on a view with nothing to search. The standard keys: Find
+        // Next is F3 on Windows and Ctrl+G elsewhere
+        auto* find = registerAction(
+            ActionIds::VIEW_FIND,
+            tr("Find"),
+            QKeySequence::Find);
+        connect(find, &QAction::triggered, this, [this] {
+            if (auto* view = activeFileView()) {
+                view->showFind();
+            }
+        });
+
+        auto* find_next = registerAction(
+            ActionIds::VIEW_FIND_NEXT,
+            tr("Find Next"),
+            QKeySequence::FindNext);
+        connect(find_next, &QAction::triggered, this, [this] {
+            if (auto* view = activeFileView()) {
+                view->findNext();
+            }
+        });
+
+        auto* find_previous = registerAction(
+            ActionIds::VIEW_FIND_PREVIOUS,
+            tr("Find Previous"),
+            QKeySequence::FindPrevious);
+        connect(find_previous, &QAction::triggered, this, [this] {
+            if (auto* view = activeFileView()) {
+                view->findPrevious();
+            }
+        });
     }
 
     // Take App's actions into the registry. Both window types adopt the whole

@@ -21,6 +21,7 @@
 #include <QJsonObject>
 #include <QKeyEvent>
 #include <QKeySequence>
+#include <QList>
 #include <QMenu>
 #include <QPlainTextDocumentLayout>
 #include <QPlainTextEdit>
@@ -29,6 +30,8 @@
 #include <QShowEvent>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <QtMinMax>
 
 #include <Coco/Debug.h>
@@ -38,13 +41,20 @@
 #include "core/WorkspaceKeys.h"
 #include "models/TextFileModel.h"
 #include "views/AbstractFileView.h"
+#include "views/FindBar.h"
 #include "views/TextEditor.h"
+#include "views/TextSearch.h"
 
 namespace Suzuri {
 
 // A text editor over a TextFileModel. Owns its own QTextDocument so its layout
 // (line wrapping) is independent of every other view on the same file; the
 // model's prime keeps the documents in sync.
+//
+// Search: a FindBar across the top, hidden until asked for, over the matches
+// TextSearch finds in this view's document. The match the search is on is the
+// editor's selection; the rest are tinted by the editor. Nothing of a search
+// is saved.
 //
 // See docs/Architecture.md, "The prime document".
 class TextFileView : public AbstractFileView
@@ -116,6 +126,59 @@ public:
         editor_->setSelectionHandles(config.selectionHandles());
     }
 
+    // --- Search --------------------------------------------------------------
+
+    // Open the find bar, or return to it. A selection within one line becomes
+    // the term; the search then starts from the selection, so it lands on the
+    // text that was selected
+    void showFind() override
+    {
+        // selectedText gives a line break as a paragraph separator
+        auto selected = editor_->textCursor().selectedText();
+        auto fills_term = !selected.isEmpty() &&
+                          !selected.contains(QChar::ParagraphSeparator);
+
+        findBar_->show();
+
+        // setTerm starts the search itself when the text differs
+        if (fills_term && selected != findBar_->term()) {
+            findBar_->setTerm(selected);
+        } else {
+            search_();
+        }
+
+        findBar_->focusTerm();
+    }
+
+    // The match after the selection, wrapping to the first. With the bar
+    // closed, opens it
+    void findNext() override
+    {
+        if (findBar_->isHidden()) {
+            showFind();
+            return;
+        }
+
+        goToMatch_(
+            TextSearch::nextIndex(
+                matches_,
+                editor_->textCursor().selectionEnd()));
+    }
+
+    // The match before the selection, wrapping to the last
+    void findPrevious() override
+    {
+        if (findBar_->isHidden()) {
+            showFind();
+            return;
+        }
+
+        goToMatch_(
+            TextSearch::previousIndex(
+                matches_,
+                editor_->textCursor().selectionStart()));
+    }
+
 protected:
     // Yield Ctrl+Z / Ctrl+Y to the window's document.undo / document.redo
     // actions instead of letting the editor consume them. This view's own
@@ -131,9 +194,21 @@ protected:
     //
     // Only these two need yielding. Every other editing op (typing, cut, paste,
     // delete, select-all) mutates the view document and the prime relays it —
-    // or the view is read-only — so none of them are intercepted
+    // or the view is read-only — so none of them are intercepted.
+    //
+    // Esc in the editor closes the find bar while it is open
     bool eventFilter(QObject* watched, QEvent* event) override
     {
+        if (watched == editor_ && event->type() == QEvent::KeyPress &&
+            !findBar_->isHidden()) {
+            auto* key_event = static_cast<QKeyEvent*>(event);
+
+            if (key_event->key() == Qt::Key_Escape) {
+                closeFind_();
+                return true;
+            }
+        }
+
         if (watched == editor_ && event->type() == QEvent::ShortcutOverride) {
             auto* key_event = static_cast<QKeyEvent*>(event);
 
@@ -176,6 +251,13 @@ protected:
 private:
     TextFileModel* model_ = nullptr;
     TextEditor* editor_ = nullptr;
+    FindBar* findBar_ = nullptr;
+
+    // What the find bar's term matches in this view's document, in order.
+    // Empty while the bar is closed. "Closed" is isHidden, the bar's own
+    // state, and not isVisible, which is also false while this view's tab is
+    // behind another
+    QList<TextSearch::Match> matches_{};
 
     // A restored scroll position (both axes) awaiting the first show (see
     // readViewState / showEvent). Empty once applied — scrollX_ / scrollY_ then
@@ -217,8 +299,20 @@ private:
 
     void setup_()
     {
-        editor_ = new TextEditor(this);
+        // The find bar above the editor, in one content widget. Focus given
+        // to the view goes on to the editor
+        auto* content = new QWidget(this);
+        findBar_ = new FindBar(content);
+        findBar_->hide();
+        editor_ = new TextEditor(content);
         editor_->installEventFilter(this);
+        content->setFocusProxy(editor_);
+
+        auto* content_layout = new QVBoxLayout(content);
+        content_layout->setContentsMargins(0, 0, 0, 0);
+        content_layout->setSpacing(0);
+        content_layout->addWidget(findBar_);
+        content_layout->addWidget(editor_, 1);
 
         // Replace QPlainTextEdit's built-in context menu — whose Undo/Redo bind
         // to this view's disabled document, and which also offers cut/paste we
@@ -262,7 +356,134 @@ private:
                 editor_->ensureCursorVisible();
             });
 
-        setWidget(editor_);
+        setupFind_(view_doc);
+        setWidget(content);
+    }
+
+    void setupFind_(QTextDocument* viewDoc)
+    {
+        connect(
+            findBar_,
+            &FindBar::searchChanged,
+            this,
+            &TextFileView::search_);
+
+        connect(
+            findBar_,
+            &FindBar::nextRequested,
+            this,
+            &TextFileView::findNext);
+
+        connect(
+            findBar_,
+            &FindBar::previousRequested,
+            this,
+            &TextFileView::findPrevious);
+
+        connect(
+            findBar_,
+            &FindBar::closeRequested,
+            this,
+            &TextFileView::closeFind_);
+
+        // The text changed, here or in another view: what matched may have
+        // moved, gone, or appeared. The selection is left where it is
+        connect(viewDoc, &QTextDocument::contentsChange, this, [this] {
+            if (!findBar_->isHidden()) {
+                findMatches_();
+            }
+        });
+
+        // The cursor moved: the count says whether the selection is a match
+        connect(editor_, &QPlainTextEdit::cursorPositionChanged, this, [this] {
+            if (!findBar_->isHidden()) {
+                updateFindCount_();
+            }
+        });
+    }
+
+    // Find the bar's term again, tint what it matches, and show the count
+    void findMatches_()
+    {
+        matches_ = TextSearch::findAll(
+            editor_->document(),
+            findBar_->term(),
+            findBar_->options());
+
+        editor_->setSearchMatches(matches_);
+        updateFindCount_();
+    }
+
+    // A new term or option: find it, and go to the first match at or after
+    // the start of the selection. Starting from the selection's start keeps
+    // the search on one match while more of its letters are typed
+    void search_()
+    {
+        findMatches_();
+
+        goToMatch_(
+            TextSearch::nextIndex(
+                matches_,
+                editor_->textCursor().selectionStart()));
+    }
+
+    // Select a match, which scrolls it into view. -1, when there are no
+    // matches, does nothing
+    void goToMatch_(int index)
+    {
+        if (index < 0) {
+            return;
+        }
+
+        const auto& match = matches_.at(index);
+
+        auto cursor = editor_->textCursor();
+        cursor.setPosition(match.position);
+        cursor.setPosition(
+            match.position + match.length,
+            QTextCursor::KeepAnchor);
+        editor_->setTextCursor(cursor);
+
+        updateFindCount_();
+    }
+
+    // The index of the match the selection covers exactly, or -1
+    [[nodiscard]] int selectedMatchIndex_() const
+    {
+        auto cursor = editor_->textCursor();
+        auto start = cursor.selectionStart();
+        auto length = cursor.selectionEnd() - start;
+
+        for (auto i = 0; i < matches_.size(); ++i) {
+            const auto& match = matches_.at(i);
+
+            if (match.position == start && match.length == length) {
+                return i;
+            }
+
+            if (match.position > start) {
+                break;
+            }
+        }
+
+        return -1;
+    }
+
+    void updateFindCount_()
+    {
+        findBar_->setCount(
+            selectedMatchIndex_(),
+            static_cast<int>(matches_.size()));
+    }
+
+    // Hide the bar, drop the tint, and return to the text. The selection
+    // stays on the match the search was on
+    void closeFind_()
+    {
+        findBar_->hide();
+        matches_.clear();
+        editor_->setSearchMatches(matches_);
+        editor_->setFocus();
     }
 
     // The editor's context menu: only Undo/Redo, routed to the model's shared
