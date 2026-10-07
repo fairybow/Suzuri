@@ -440,6 +440,7 @@ private:
         edit_menu->addAction(action(ActionIds::DOCUMENT_REDO));
         edit_menu->addSeparator();
         edit_menu->addAction(action(ActionIds::VIEW_FIND));
+        edit_menu->addAction(action(ActionIds::VIEW_REPLACE));
         edit_menu->addAction(action(ActionIds::VIEW_FIND_NEXT));
         edit_menu->addAction(action(ActionIds::VIEW_FIND_PREVIOUS));
 

@@ -22,6 +22,7 @@
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QList>
+#include <QLocale>
 #include <QMenu>
 #include <QPlainTextDocumentLayout>
 #include <QPlainTextEdit>
@@ -53,8 +54,9 @@ namespace Suzuri {
 //
 // Search: a FindBar across the top, hidden until asked for, over the matches
 // TextSearch finds in this view's document. The match the search is on is the
-// editor's selection; the rest are tinted by the editor. Nothing of a search
-// is saved.
+// editor's selection; the rest are tinted by the editor. Replacing is done in
+// this view's document, so it reaches the buffer as typing does. Nothing of a
+// search is saved.
 //
 // See docs/Architecture.md, "The prime document".
 class TextFileView : public AbstractFileView
@@ -148,6 +150,13 @@ public:
         }
 
         findBar_->focusTerm();
+    }
+
+    // The same, with the row to replace with
+    void showReplace() override
+    {
+        findBar_->setReplaceShown(true);
+        showFind();
     }
 
     // The match after the selection, wrapping to the first. With the bar
@@ -382,6 +391,18 @@ private:
 
         connect(
             findBar_,
+            &FindBar::replaceRequested,
+            this,
+            &TextFileView::replace_);
+
+        connect(
+            findBar_,
+            &FindBar::replaceAllRequested,
+            this,
+            &TextFileView::replaceAll_);
+
+        connect(
+            findBar_,
             &FindBar::closeRequested,
             this,
             &TextFileView::closeFind_);
@@ -476,11 +497,51 @@ private:
             static_cast<int>(matches_.size()));
     }
 
-    // Hide the bar, drop the tint, and return to the text. The selection
-    // stays on the match the search was on
+    // Replace the match the search is on, then go to the next. When the
+    // selection is not a match, only goes to the next, so the first press
+    // shows what the second will replace. A match that already reads as the
+    // replacement is stepped over unchanged.
+    //
+    // The match is copied: the edit refreshes matches_ before replaceOne
+    // returns
+    void replace_()
+    {
+        auto index = selectedMatchIndex_();
+        auto replacement = findBar_->replacement();
+
+        if (index >= 0 && editor_->textCursor().selectedText() != replacement) {
+            auto match = matches_.at(index);
+            TextSearch::replaceOne(editor_->document(), match, replacement);
+        }
+
+        findNext();
+    }
+
+    // Replace every match, as one undo step, and say how many were replaced.
+    // The edit has refreshed the matches and the count by the time
+    // replaceAll returns, so the message is set after it
+    void replaceAll_()
+    {
+        auto replaced = TextSearch::replaceAll(
+            editor_->document(),
+            findBar_->term(),
+            findBar_->replacement(),
+            findBar_->options());
+
+        if (replaced == 1) {
+            findBar_->setMessage(tr("1 replaced"));
+        } else if (replaced > 1) {
+            findBar_->setMessage(
+                tr("%1 replaced").arg(QLocale().toString(replaced)));
+        }
+    }
+
+    // Hide the bar and its row to replace with, drop the tint, and return to
+    // the text. The selection stays on the match the search was on
     void closeFind_()
     {
         findBar_->hide();
+        findBar_->setReplaceShown(false);
         matches_.clear();
         editor_->setSearchMatches(matches_);
         editor_->setFocus();

@@ -390,6 +390,16 @@ private:
             }
         });
 
+        auto* replace = registerAction(
+            ActionIds::VIEW_REPLACE,
+            tr("Replace"),
+            QKeySequence::Replace);
+        connect(replace, &QAction::triggered, this, [this] {
+            if (auto* view = activeFileView()) {
+                view->showReplace();
+            }
+        });
+
         auto* find_next = registerAction(
             ActionIds::VIEW_FIND_NEXT,
             tr("Find Next"),

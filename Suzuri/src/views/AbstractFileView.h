@@ -83,6 +83,7 @@ public:
     // overrides them. The search is one view's own, like its zoom: two views
     // of a file search apart
     virtual void showFind() {}
+    virtual void showReplace() {}
     virtual void findNext() {}
     virtual void findPrevious() {}
 

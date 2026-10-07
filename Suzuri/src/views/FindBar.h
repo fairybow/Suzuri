@@ -22,6 +22,7 @@
 #include <QPalette>
 #include <QString>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include <Coco/Debug.h>
@@ -69,15 +70,19 @@ private:
 
 } // namespace Internal
 
-// The row of controls a text view shows across its top while searching: the
-// search field, how many matches there are and which one the search is on,
-// previous and next, the two options, and close.
+// The controls a text view shows across its top while searching. One row to
+// find: the search field, previous and next, the two options, how many
+// matches there are and which one the search is on, and close. Under it, when
+// asked for, a row to replace: the replacement field, Replace, and Replace
+// all.
 //
 // It holds what the user typed and chose, and says when that changes or when a
-// button is pressed. It searches nothing and knows nothing of the document:
-// TextFileView owns the search and connects to these signals directly.
+// button is pressed. It searches and replaces nothing and knows nothing of the
+// document: TextFileView owns the search and connects to these signals
+// directly.
 //
-// In the field, Enter is next, Shift+Enter previous, and Esc close
+// In the search field, Enter is next and Shift+Enter previous. In the
+// replacement field, Enter is Replace. Esc closes from either
 class FindBar : public QWidget
 {
     Q_OBJECT
@@ -100,6 +105,11 @@ public:
 
     // Announces searchChanged if the text differs from what is there
     void setTerm(const QString& term) { term_->setText(term); }
+
+    [[nodiscard]] QString replacement() const { return replacement_->text(); }
+
+    // Show or hide the row to replace with
+    void setReplaceShown(bool shown) { replaceRow_->setVisible(shown); }
 
     // Put the caret in the search field with its text selected, so typing
     // replaces it
@@ -131,26 +141,35 @@ public:
         }
     }
 
+    // Show a message where the count goes, until the count is next set
+    void setMessage(const QString& message) { count_->setText(message); }
+
 signals:
     // The term or an option changed
     void searchChanged();
 
     void nextRequested();
     void previousRequested();
+    void replaceRequested();
+    void replaceAllRequested();
     void closeRequested();
 
 protected:
-    // The field's keys. Taken here because QLineEdit reports Enter with no
+    // The fields' keys. Taken here because QLineEdit reports Enter with no
     // word of Shift, and does nothing with Esc
     bool eventFilter(QObject* watched, QEvent* event) override
     {
-        if (watched == term_ && event->type() == QEvent::KeyPress) {
+        auto is_field = watched == term_ || watched == replacement_;
+
+        if (is_field && event->type() == QEvent::KeyPress) {
             auto* key_event = static_cast<QKeyEvent*>(event);
 
             switch (key_event->key()) {
             case Qt::Key_Return:
             case Qt::Key_Enter:
-                if (key_event->modifiers() & Qt::ShiftModifier) {
+                if (watched == replacement_) {
+                    emit replaceRequested();
+                } else if (key_event->modifiers() & Qt::ShiftModifier) {
                     emit previousRequested();
                 } else {
                     emit nextRequested();
@@ -181,13 +200,15 @@ private:
     Internal::FindBarButton_* close_ =
         new Internal::FindBarButton_(u":/lucide/X.svg"_s, this);
 
+    QWidget* replaceRow_ = new QWidget(this);
+    QLineEdit* replacement_ = new QLineEdit(replaceRow_);
+    QToolButton* replace_ = new QToolButton(replaceRow_);
+    QToolButton* replaceAll_ = new QToolButton(replaceRow_);
+
     void setup_()
     {
-        term_->setPlaceholderText(tr("Find"));
-        term_->setMinimumWidth(FIND_BAR_TERM_MIN_WIDTH);
-        term_->setMaximumWidth(FIND_BAR_TERM_WIDTH);
-        term_->setClearButtonEnabled(true);
-        term_->installEventFilter(this);
+        setupField_(term_, tr("Find"));
+        setupField_(replacement_, tr("Replace with"));
 
         count_->setForegroundRole(FIND_BAR_COUNT_ROLE);
 
@@ -198,21 +219,42 @@ private:
         setupOption_(matchCase_, tr("Match case"));
         setupOption_(wholeWord_, tr("Whole word"));
 
-        auto* layout = new QHBoxLayout(this);
+        setupButton_(replace_, tr("Replace"));
+        setupButton_(replaceAll_, tr("Replace all"));
+
+        // In each row the field alone has a stretch factor, so it takes spare
+        // width up to its maximum before the gap after the controls takes any,
+        // and the two fields come out the same width
+        auto* find_row = new QHBoxLayout{};
+        find_row->setSpacing(FIND_BAR_SPACING);
+        find_row->addWidget(term_, 1);
+        find_row->addWidget(previous_);
+        find_row->addWidget(next_);
+        find_row->addWidget(matchCase_);
+        find_row->addWidget(wholeWord_);
+        find_row->addWidget(count_);
+        find_row->addStretch(0);
+        find_row->addWidget(close_);
+
+        auto* replace_row = new QHBoxLayout(replaceRow_);
+        replace_row->setContentsMargins(0, 0, 0, 0);
+        replace_row->setSpacing(FIND_BAR_SPACING);
+        replace_row->addWidget(replacement_, 1);
+        replace_row->addWidget(replace_);
+        replace_row->addWidget(replaceAll_);
+        replace_row->addStretch(0);
+
+        replaceRow_->hide();
+
+        auto* layout = new QVBoxLayout(this);
         layout->setContentsMargins(
             FIND_BAR_MARGIN,
             FIND_BAR_MARGIN,
             FIND_BAR_MARGIN,
             FIND_BAR_MARGIN);
         layout->setSpacing(FIND_BAR_SPACING);
-        layout->addWidget(term_, 1);
-        layout->addWidget(previous_);
-        layout->addWidget(next_);
-        layout->addWidget(matchCase_);
-        layout->addWidget(wholeWord_);
-        layout->addWidget(count_);
-        layout->addStretch(1);
-        layout->addWidget(close_);
+        layout->addLayout(find_row);
+        layout->addWidget(replaceRow_);
 
         connect(term_, &QLineEdit::textChanged, this, [this] {
             emit searchChanged();
@@ -229,15 +271,39 @@ private:
         connect(close_, &QAbstractButton::clicked, this, [this] {
             emit closeRequested();
         });
+
+        connect(replace_, &QAbstractButton::clicked, this, [this] {
+            emit replaceRequested();
+        });
+
+        connect(replaceAll_, &QAbstractButton::clicked, this, [this] {
+            emit replaceAllRequested();
+        });
+    }
+
+    void setupField_(QLineEdit* field, const QString& placeholder)
+    {
+        field->setPlaceholderText(placeholder);
+        field->setMinimumWidth(FIND_BAR_TERM_MIN_WIDTH);
+        field->setMaximumWidth(FIND_BAR_TERM_WIDTH);
+        field->setClearButtonEnabled(true);
+        field->installEventFilter(this);
+    }
+
+    // A text button on the bar. It takes no focus, so a click leaves the
+    // caret in the field it was in
+    void setupButton_(QToolButton* button, const QString& text)
+    {
+        button->setText(text);
+        button->setAutoRaise(true);
+        button->setFocusPolicy(Qt::NoFocus);
     }
 
     // A text button that stays down while its option is on
     void setupOption_(QToolButton* button, const QString& text)
     {
-        button->setText(text);
+        setupButton_(button, text);
         button->setCheckable(true);
-        button->setAutoRaise(true);
-        button->setFocusPolicy(Qt::NoFocus);
 
         connect(button, &QToolButton::toggled, this, [this] {
             emit searchChanged();

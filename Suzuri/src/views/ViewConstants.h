@@ -62,10 +62,11 @@ inline constexpr auto SEARCH_MATCH_ROLE = QPalette::Highlight;
 inline constexpr int SEARCH_MATCH_ALPHA = 64;
 
 // The find bar across the top of a text view (FindBar). MARGIN is the space
-// around its row of controls and SPACING the gap between them. The search
-// field is TERM_WIDTH wide, and narrows as far as TERM_MIN_WIDTH in a pane too
-// narrow for the whole row. BUTTON_EXTENT is a glyph button's square footprint
-// and ICON_EXTENT the glyph centered in it
+// around its rows of controls and SPACING the gap between them, and between
+// the rows. The search and replacement fields are TERM_WIDTH wide, and narrow
+// as far as TERM_MIN_WIDTH in a pane too narrow for the whole row.
+// BUTTON_EXTENT is a glyph button's square footprint and ICON_EXTENT the glyph
+// centered in it
 inline constexpr int FIND_BAR_MARGIN = 6;
 inline constexpr int FIND_BAR_SPACING = 6;
 inline constexpr int FIND_BAR_TERM_WIDTH = 240;
