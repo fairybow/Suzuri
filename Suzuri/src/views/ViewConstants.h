@@ -54,19 +54,22 @@ inline constexpr int LINE_NUMBER_RIGHT_PADDING = 8;
 // the text cursor is on, filled with this role's brush
 inline constexpr auto LINE_HIGHLIGHT_ROLE = QPalette::AlternateBase;
 
-// What a search found, tinted behind the text (TextEditor): this role's color
-// at ALPHA of 255. The match the search is on is the editor's own selection,
-// so it is drawn as one and stands apart from the rest
+// What a search found, tinted over the text (TextEditor): this role's color
+// at ALPHA of 255, light enough to read the text through. The match the
+// search is on is the editor's own selection, so it is drawn as one and
+// stands apart from the rest
 inline constexpr auto SEARCH_MATCH_ROLE = QPalette::Highlight;
 inline constexpr int SEARCH_MATCH_ALPHA = 64;
 
 // The find bar across the top of a text view (FindBar). MARGIN is the space
-// around its row of controls and SPACING the gap between them. TERM_WIDTH is
-// the search field's. BUTTON_EXTENT is a glyph button's square footprint and
-// ICON_EXTENT the glyph centered in it
+// around its row of controls and SPACING the gap between them. The search
+// field is TERM_WIDTH wide, and narrows as far as TERM_MIN_WIDTH in a pane too
+// narrow for the whole row. BUTTON_EXTENT is a glyph button's square footprint
+// and ICON_EXTENT the glyph centered in it
 inline constexpr int FIND_BAR_MARGIN = 6;
 inline constexpr int FIND_BAR_SPACING = 6;
 inline constexpr int FIND_BAR_TERM_WIDTH = 240;
+inline constexpr int FIND_BAR_TERM_MIN_WIDTH = 80;
 inline constexpr int FIND_BAR_BUTTON_EXTENT = 24;
 inline constexpr int FIND_BAR_ICON_EXTENT = 14;
 inline constexpr auto FIND_BAR_ICON_ROLE = QPalette::WindowText;

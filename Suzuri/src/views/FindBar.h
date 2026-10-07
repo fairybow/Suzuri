@@ -184,7 +184,8 @@ private:
     void setup_()
     {
         term_->setPlaceholderText(tr("Find"));
-        term_->setFixedWidth(FIND_BAR_TERM_WIDTH);
+        term_->setMinimumWidth(FIND_BAR_TERM_MIN_WIDTH);
+        term_->setMaximumWidth(FIND_BAR_TERM_WIDTH);
         term_->setClearButtonEnabled(true);
         term_->installEventFilter(this);
 
@@ -204,7 +205,7 @@ private:
             FIND_BAR_MARGIN,
             FIND_BAR_MARGIN);
         layout->setSpacing(FIND_BAR_SPACING);
-        layout->addWidget(term_);
+        layout->addWidget(term_, 1);
         layout->addWidget(previous_);
         layout->addWidget(next_);
         layout->addWidget(matchCase_);

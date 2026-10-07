@@ -27,6 +27,7 @@
 #include <QPoint>
 #include <QPointF>
 #include <QRect>
+#include <QRectF>
 #include <QResizeEvent>
 #include <QString>
 #include <QTextBlock>
@@ -155,7 +156,6 @@ public:
     {
         setLineWrapMode(
             wrapped ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
-        updateExtraSelections_();
     }
 
     // Percent of the editor's width kept clear on each side of the text
@@ -199,12 +199,13 @@ public:
         updateExtraSelections_();
     }
 
-    // What a search found, to tint behind the text. An empty list clears the
-    // tint. The list is in document order, as TextSearch::findAll gives it
+    // What a search found, to tint (paintSearchMatches_). An empty list
+    // clears the tint. The list is in document order, as TextSearch::findAll
+    // gives it
     void setSearchMatches(const QList<TextSearch::Match>& matches)
     {
         searchMatches_ = matches;
-        updateExtraSelections_();
+        viewport()->update();
     }
 
     [[nodiscard]] bool doubleClickWhitespace() const noexcept
@@ -231,9 +232,9 @@ public:
 
 protected:
     // The base applies a new font to the document; the gutter's width and the
-    // tab width are measured in that font, so they follow, and so do the
-    // lines in view. The extra selections' colors are read from the palette
-    // when they are built, so a new palette rebuilds them
+    // tab width are measured in that font, so they follow. The line
+    // highlight's brush is read from the palette when it is built, so a new
+    // palette rebuilds it
     void changeEvent(QEvent* event) override
     {
         QPlainTextEdit::changeEvent(event);
@@ -241,18 +242,18 @@ protected:
         if (event->type() == QEvent::FontChange) {
             updateViewportMargins_();
             updateTabStopDistance_();
-            updateExtraSelections_();
-        } else if (event->type() == QEvent::PaletteChange) {
+        } else if (event->type() == QEvent::PaletteChange && lineHighlight_) {
             updateExtraSelections_();
         }
     }
 
-    // The selection handles are drawn over the text, so after it. This is
-    // the viewport's paint event (QAbstractScrollArea hands those here), and
-    // the base's painter is finished by the time it returns
+    // The search tint and the selection handles are drawn over the text, so
+    // after it. This is the viewport's paint event (QAbstractScrollArea hands
+    // those here), and the base's painter is finished by the time it returns
     void paintEvent(QPaintEvent* event) override
     {
         QPlainTextEdit::paintEvent(event);
+        paintSearchMatches_(event);
         selectionHandles_.paint();
     }
 
@@ -313,11 +314,6 @@ protected:
     {
         updateViewportMargins_();
         QPlainTextEdit::resizeEvent(event);
-
-        // A new size puts different lines in view
-        if (!searchMatches_.isEmpty()) {
-            updateExtraSelections_();
-        }
     }
 
 private:
@@ -441,18 +437,11 @@ private:
         setTabStopDistance(tabWidth_ * metrics.horizontalAdvance(QChar(u' ')));
     }
 
-    // The editor's extra selections: the current-line band, then the tint
-    // behind each search match in view, so a match on the current line shows
-    // over the band.
-    //
-    // The band is a selection-less copy of the text cursor flagged full-width,
-    // which QPlainTextEdit paints across the whole row that position is on.
-    // The copy doesn't follow the text cursor, so this is rebuilt each time
-    // the cursor moves (onCursorPositionChanged_).
-    //
-    // Only the matches in view are given a selection, and this is rebuilt when
-    // the view moves. A common word in a long file has thousands of matches,
-    // and setting that many selections takes tens of milliseconds each time
+    // The editor's extra selections: the current-line band, or none. The band
+    // is a selection-less copy of the text cursor flagged full-width, which
+    // QPlainTextEdit paints across the whole row that position is on. The
+    // copy doesn't follow the text cursor, so this is rebuilt each time the
+    // cursor moves (onCursorPositionChanged_)
     void updateExtraSelections_()
     {
         QList<QTextEdit::ExtraSelection> selections{};
@@ -466,45 +455,86 @@ private:
             selections << band;
         }
 
-        if (!searchMatches_.isEmpty()) {
-            appendSearchSelections_(selections);
-        }
-
         setExtraSelections(selections);
     }
 
-    // One selection for each match that starts in a paragraph in view. The
-    // matches are in order, so the first is found by bisection and the walk
-    // stops at the first one past the last paragraph
-    void appendSearchSelections_(QList<QTextEdit::ExtraSelection>& selections)
+    // Tint each search match in view: a translucent rectangle over its text,
+    // one for each line the match is on. The match that is the selection is
+    // left alone, since the selection already marks it.
+    //
+    // Painted here and not given to the editor as extra selections. Painting
+    // those costs more than in proportion to how many are in view, and a
+    // single letter matches hundreds of times on a screen of prose. This costs
+    // one rectangle per match.
+    //
+    // Walks the visible blocks top-down as paintLineNumberArea_ does. The
+    // matches are in order, so the first in view is found by bisection and
+    // each block takes its own from where the last one stopped
+    void paintSearchMatches_(const QPaintEvent* event)
     {
-        auto first_position = firstVisibleBlock().position();
+        if (searchMatches_.isEmpty()) {
+            return;
+        }
 
-        auto last_block =
-            cursorForPosition(viewport()->rect().bottomLeft()).block();
-        auto end_position = last_block.position() + last_block.length();
+        QPainter painter(viewport());
 
         auto tint = palette().color(SEARCH_MATCH_ROLE);
         tint.setAlpha(SEARCH_MATCH_ALPHA);
 
+        auto selection = textCursor();
+        auto selection_start = selection.selectionStart();
+        auto selection_length = selection.selectionEnd() - selection_start;
+
+        auto block = firstVisibleBlock();
+        auto offset = contentOffset();
+
         auto it = std::lower_bound(
             searchMatches_.cbegin(),
             searchMatches_.cend(),
-            first_position,
+            block.position(),
             [](const TextSearch::Match& match, int position) {
                 return match.position < position;
             });
 
-        for (; it != searchMatches_.cend() && it->position < end_position;
-             ++it) {
-            QTextEdit::ExtraSelection selection{};
-            selection.format.setBackground(tint);
-            selection.cursor = QTextCursor(document());
-            selection.cursor.setPosition(it->position);
-            selection.cursor.setPosition(
-                it->position + it->length,
-                QTextCursor::KeepAnchor);
-            selections << selection;
+        while (block.isValid() && it != searchMatches_.cend()) {
+            auto geometry = blockBoundingGeometry(block).translated(offset);
+            if (geometry.top() > event->rect().bottom()) {
+                break;
+            }
+
+            auto block_start = block.position();
+            auto block_end = block_start + block.length();
+            const auto* layout = block.layout();
+
+            for (; it != searchMatches_.cend() && it->position < block_end;
+                 ++it) {
+                if (!block.isVisible() || (it->position == selection_start &&
+                                           it->length == selection_length)) {
+                    continue;
+                }
+
+                auto start = it->position - block_start;
+                auto end = start + it->length;
+                auto line = layout->lineForTextPosition(start);
+
+                while (line.isValid() && line.textStart() < end) {
+                    auto line_end = line.textStart() + line.textLength();
+                    auto left = line.cursorToX(qMax(start, line.textStart()));
+                    auto right = line.cursorToX(qMin(end, line_end));
+
+                    painter.fillRect(
+                        QRectF(
+                            geometry.left() + left,
+                            geometry.top() + line.y(),
+                            right - left,
+                            line.height()),
+                        tint);
+
+                    line = layout->lineAt(line.lineNumber() + 1);
+                }
+            }
+
+            block = block.next();
         }
     }
 
@@ -582,11 +612,6 @@ private:
     // does the same, so the numbers move and refresh with their lines
     void onUpdateRequest_(const QRect& rect, int deltaY)
     {
-        // A scroll puts different lines in view
-        if (deltaY != 0 && !searchMatches_.isEmpty()) {
-            updateExtraSelections_();
-        }
-
         if (!lineNumbers_) {
             return;
         }
