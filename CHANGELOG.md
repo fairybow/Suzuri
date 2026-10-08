@@ -50,7 +50,7 @@ This is a soft release. For a full feature list, see [Features.md](https://githu
 
 **Linux:** Delete the `.AppImage`.
 
-Uninstalling leaves these folders in place. The first and last hold only settings and are safe to remove. `Documents/Suzuri/` holds your writing: delete it only if you mean to.
+Uninstalling leaves these folders in place. The first holds only app data and is safe to remove. Each vault's `.suzuri/` holds its settings and the words you've added to its dictionary. `Documents/Suzuri/` holds your writing: delete it only if you mean to.
 
 | Folder | Location | Contents |
 |---|---|---|
