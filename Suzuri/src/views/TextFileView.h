@@ -38,13 +38,17 @@
 #include <Coco/Debug.h>
 #include <Coco/Time.h>
 
+#include "core/Misspelling.h"
+#include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
+#include "core/WordList.h"
 #include "core/WorkspaceKeys.h"
 #include "models/TextFileModel.h"
 #include "views/AbstractFileView.h"
 #include "views/FindBar.h"
 #include "views/TextEditor.h"
 #include "views/TextSearch.h"
+#include "views/ViewConstants.h"
 
 namespace Suzuri {
 
@@ -128,6 +132,16 @@ public:
         editor_->setSelectionHandles(config.selectionHandles());
     }
 
+    void setSpellChecker(SpellChecker* borrowedSpellChecker) override
+    {
+        editor_->setSpellChecker(borrowedSpellChecker);
+    }
+
+    void setAcceptedWords(const WordList& words) override
+    {
+        editor_->setAcceptedWords(words);
+    }
+
     // --- Search --------------------------------------------------------------
 
     // Open the find bar, or return to it. A selection within one line becomes
@@ -187,6 +201,11 @@ public:
                 matches_,
                 editor_->textCursor().selectionStart()));
     }
+
+signals:
+    // From the context menu, for the host to pass to the vault
+    void addToDictionaryRequested(const QString& word);
+    void ignoreWordRequested(const QString& word);
 
 protected:
     // Yield Ctrl+Z / Ctrl+Y to the window's document.undo / document.redo
@@ -547,15 +566,50 @@ private:
         editor_->setFocus();
     }
 
-    // The editor's context menu: only Undo/Redo, routed to the model's shared
-    // stack rather than the editor's disabled document. The shortcut is a
-    // display-only hint (text after '\t'), so nothing here registers a binding
-    // that competes with the window's document.undo / document.redo actions;
-    // the enabled state comes from the model, and a disabled entry can't be
-    // chosen, so reading exec()'s return needs no availability re-check
+    // The editor's context menu. Over a misspelled word, it opens with what
+    // the dictionary suggests, then a way to add the word to the vault's
+    // dictionary or ignore it for now; those two go out as requests, since a
+    // view doesn't know its vault. Over anything else, the menu is only
+    // Undo/Redo.
+    //
+    // Undo/Redo are routed to the model's shared stack rather than the
+    // editor's disabled document. The shortcut is a display-only hint (text
+    // after '\t'), so nothing here registers a binding that competes with the
+    // window's document.undo / document.redo actions; the enabled state comes
+    // from the model, and a disabled entry can't be chosen, so reading exec()'s
+    // return needs no availability re-check.
+    //
+    // A QAbstractScrollArea gives the request's position in its viewport's
+    // coordinates, so the menu is placed from the viewport
     void onEditorContextMenuRequested_(const QPoint& pos)
     {
         QMenu menu(editor_);
+
+        auto word_cursor = editor_->wordAt(pos);
+        auto word = word_cursor.selectedText();
+        auto misspelled = editor_->isMisspelled(word);
+
+        QStringList suggestions{};
+        QList<QAction*> suggestion_actions{};
+        QAction* add_to_dictionary = nullptr;
+        QAction* ignore = nullptr;
+
+        if (misspelled) {
+            suggestions = suggestionsFor_(word);
+
+            for (const auto& suggestion : suggestions) {
+                suggestion_actions << menu.addAction(suggestion);
+            }
+
+            if (suggestion_actions.isEmpty()) {
+                menu.addAction(tr("No suggestions"))->setEnabled(false);
+            }
+
+            menu.addSeparator();
+            add_to_dictionary = menu.addAction(tr("Add to dictionary"));
+            ignore = menu.addAction(tr("Ignore"));
+            menu.addSeparator();
+        }
 
         auto* undo = menu.addAction(
             tr("Undo") + QChar(QChar::Tabulation) +
@@ -569,13 +623,43 @@ private:
                 .toString(QKeySequence::NativeText));
         redo->setEnabled(model_->isRedoAvailable());
 
-        auto* chosen = menu.exec(editor_->mapToGlobal(pos));
+        auto* chosen = menu.exec(editor_->viewport()->mapToGlobal(pos));
+
+        if (!chosen) {
+            return;
+        }
 
         if (chosen == undo) {
             model_->undo();
         } else if (chosen == redo) {
             model_->redo();
+        } else if (chosen == add_to_dictionary) {
+            emit addToDictionaryRequested(Misspelling::withoutPossessive(word));
+        } else if (chosen == ignore) {
+            emit ignoreWordRequested(Misspelling::withoutPossessive(word));
+        } else if (auto i = suggestion_actions.indexOf(chosen); i >= 0) {
+            // One edit, so one undo step. The text comes from the list, not
+            // the action, which a style may have given a shortcut marker
+            word_cursor.insertText(suggestions.at(i));
         }
+    }
+
+    // What the dictionary offers for a word. The dictionary gives a plain
+    // apostrophe; a word typed with typographic ones gets them back, so a
+    // correction matches the text around it
+    [[nodiscard]] QStringList suggestionsFor_(const QString& word) const
+    {
+        auto suggestions = editor_->spellChecker()->suggestions(
+            word,
+            SPELLING_SUGGESTIONS_MAX);
+
+        if (word.contains(QChar(0x2019))) {
+            for (auto& suggestion : suggestions) {
+                suggestion.replace(QChar(u'\''), QChar(0x2019));
+            }
+        }
+
+        return suggestions;
     }
 };
 

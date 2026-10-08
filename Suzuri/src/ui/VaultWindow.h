@@ -36,6 +36,7 @@
 #include "core/ActionIds.h"
 #include "core/AppActions.h"
 #include "core/FileRef.h"
+#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultEntry.h"
 #include "core/WorkspaceKeys.h"
@@ -72,17 +73,20 @@ public:
     // Borrows both its own Vault and the common Vault from App. vaultsProvider
     // is App's vaultEntries(), passed straight to the Sidebar's switcher.
     // appActions are App's own actions: the base adopts them, and this window
-    // hands the set on to every pop-out it makes
+    // hands the set on to every pop-out it makes. spellCheckers is App's too,
+    // and is where each text view's dictionary comes from
     VaultWindow(
         Vault* borrowedVault,
         Vault* commonVault,
         std::function<QList<VaultEntry>()> vaultsProvider,
-        const AppActions& appActions)
+        const AppActions& appActions,
+        SpellCheckers* spellCheckers)
         : BaseWindow(appActions)
         , vault_(borrowedVault)
         , commonVault_(commonVault)
         , vaultsProvider_(std::move(vaultsProvider))
         , appActions_(appActions)
+        , spellCheckers_(spellCheckers)
     {
         setup_();
     }
@@ -214,6 +218,9 @@ private:
     // App's actions, held only to hand on to pop-outs — the base already
     // adopted them for this window. Not owned here; App outlives every window
     AppActions appActions_{};
+
+    // App's dictionaries, which makeView_ takes each view's from. Not owned
+    SpellCheckers* spellCheckers_ = nullptr;
 
     Sidebar* sidebar_ = nullptr;
 
@@ -493,8 +500,11 @@ private:
     void onSettingsRequested_()
     {
         if (!settingsDialog_) {
-            settingsDialog_ =
-                new SettingsDialog(vault_, action(ActionIds::APP_QUIT), this);
+            settingsDialog_ = new SettingsDialog(
+                vault_,
+                spellCheckers_,
+                action(ActionIds::APP_QUIT),
+                this);
         }
 
         settingsDialog_->open();
@@ -545,7 +555,21 @@ private:
         AbstractFileView* view = nullptr;
 
         if (auto* text = qobject_cast<TextFileModel*>(model)) {
-            view = new TextFileView(text);
+            auto* text_view = new TextFileView(text);
+
+            // Words go to this window's vault, whichever vault the file is in
+            connect(
+                text_view,
+                &TextFileView::addToDictionaryRequested,
+                vault_,
+                &Vault::addToDictionary);
+            connect(
+                text_view,
+                &TextFileView::ignoreWordRequested,
+                vault_,
+                &Vault::ignoreWord);
+
+            view = text_view;
         } else if (auto* pdf = qobject_cast<PdfFileModel*>(model)) {
             view = new PdfFileView(pdf);
         } else if (auto* image = qobject_cast<ImageFileModel*>(model)) {
@@ -561,12 +585,44 @@ private:
         // Vault file open here looks like its neighbours. Applied now, and
         // again on every change. The view is the connection's context, so the
         // link dies with it; the vault is captured by value because it outlives
-        // every view this window (or its pop-outs) will ever host
+        // every view this window (or its pop-outs) will ever host.
+        //
+        // The dictionary is one of those settings, but not something a view
+        // can make from the config alone, so it is found here and handed over:
+        // none while spellcheck is off, or when the language has no dictionary
         auto* vault = vault_;
-        view->applyConfig(vault->config());
-        connect(vault, &Vault::configChanged, view, [view, vault] {
-            view->applyConfig(vault->config());
-        });
+        auto apply = [view, vault, spell_checkers = spellCheckers_] {
+            const auto& config = vault->config();
+            view->applyConfig(config);
+            view->setSpellChecker(
+                config.spellcheck()
+                    ? spell_checkers->checker(config.spellcheckLanguage())
+                    : nullptr);
+        };
+
+        apply();
+        connect(vault, &Vault::configChanged, view, apply);
+
+        // The words to take as correct: this window's vault's dictionary and
+        // ignored words, and the Common Vault's dictionary, which applies in
+        // every vault. Taken again when either vault's words change
+        auto apply_words = [view, vault, common = commonVault_] {
+            auto words = vault->dictionary();
+            words.unite(vault->ignoredWords());
+
+            if (common != vault) {
+                words.unite(common->dictionary());
+            }
+
+            view->setAcceptedWords(words);
+        };
+
+        apply_words();
+        connect(vault, &Vault::wordsChanged, view, apply_words);
+
+        if (commonVault_ != vault) {
+            connect(commonVault_, &Vault::wordsChanged, view, apply_words);
+        }
 
         markIfGuest_(view, fileRef);
         return view;

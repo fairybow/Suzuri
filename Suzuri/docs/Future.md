@@ -25,7 +25,6 @@ Nothing here is a promise or a schedule.
 
 ### Editing
 
-- Spellcheck
 - Hearth's typing helpers: auto-closing pairs, delete-pair, skip-closer, and barging past closing punctuation
 
 ### Files and file trees
@@ -77,7 +76,7 @@ Nothing here is a promise or a schedule.
 
 ### Settings
 
-- Pick up edits made to the settings files by hand, or by a sync, while the vault is open
+- Pick up edits made to the settings files or the vault's dictionary, by hand or by a sync, while the vault is open
 - A trash destination setting, and with it permanent delete
 
 ### Opening from outside Suzuri
@@ -107,6 +106,8 @@ Committing a vault to a repository, for backup and history.
 - **Dragging a file out to the desktop** as a shortcut that opens it in its vault
 - **Detecting and converting older text encodings** (Windows-1252 and others), in place of the warning
 - **Patterns in Find** (regular expressions). Needs a way to show a pattern that doesn't parse, and a syntax for using what was matched in the replacement. Worth building if plain text with Whole word proves too blunt
+- **Several spelling languages at once.** A view checks against one dictionary. Several would mean asking each one about every word, merging their suggestions, and deciding which one Add to dictionary answers to. Worth building if writing in two languages in one vault proves common
+- **Managing the dictionary in Suzuri.** Removing an added word means editing `.suzuri/dictionary.txt` by hand, as in Obsidian. A list in Settings would do it in place. Worth building if hand editing proves awkward
 - **Searching the whole vault.** A separate feature from Find, with its own list of results. Obsidian's is a plugin of its own
 - **An overwrite toggle on the Insert key,** per editor, with a status bar indicator
 - **Drop zones that move.** While a tab is dragged over a pane's edge, the pane would shrink aside to show where the new pane will land

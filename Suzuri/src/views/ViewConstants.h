@@ -61,6 +61,20 @@ inline constexpr auto LINE_HIGHLIGHT_ROLE = QPalette::AlternateBase;
 inline constexpr auto SEARCH_MATCH_ROLE = QPalette::Highlight;
 inline constexpr int SEARCH_MATCH_ALPHA = 64;
 
+// A misspelled word's underline (TextEditor): a wave in COLOR, WIDTH thick,
+// rising and falling AMPLITUDE either side of a line GAP below the text's
+// baseline, each rise or fall HALF_PERIOD across. A fixed color rather than a
+// palette role: no role means "error", and this red reads on a light or a dark
+// text area alike
+inline constexpr auto MISSPELLING_COLOR = QColor(226, 68, 68);
+inline constexpr qreal MISSPELLING_WIDTH = 1.0;
+inline constexpr qreal MISSPELLING_AMPLITUDE = 1.0;
+inline constexpr qreal MISSPELLING_HALF_PERIOD = 2.0;
+inline constexpr qreal MISSPELLING_GAP = 2.0;
+
+// How many suggestions the editor's context menu offers for a misspelled word
+inline constexpr int SPELLING_SUGGESTIONS_MAX = 5;
+
 // The find bar across the top of a text view (FindBar). MARGIN is the space
 // around its rows of controls and SPACING the gap between them, and between
 // the rows. The search and replacement fields are TERM_WIDTH wide, and narrow

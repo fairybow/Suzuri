@@ -1064,6 +1064,83 @@ private slots:
             !VaultConfig::DEFAULT_WRAP_LINES);
     }
 
+    // --- Spelling words -----------------------------------------------------
+
+    // The dictionary file is read when the vault opens
+    void theDictionaryIsReadAtConstruction()
+    {
+        QTemporaryDir folder{};
+        Coco::Path root(folder.path());
+
+        {
+            Vault first(root, nullptr);
+        }
+
+        QFile file(folder.filePath(u".suzuri/dictionary.txt"_s));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("Pangloss\nCunegonde\n");
+        file.close();
+
+        Vault vault(root, nullptr);
+
+        QVERIFY(vault.dictionary().contains(u"Pangloss"_s));
+        QVERIFY(vault.dictionary().contains(u"Cunegonde"_s));
+        QCOMPARE(vault.dictionary().size(), 2);
+    }
+
+    // Added, announced, and written sorted, one word per line
+    void anAddedWordIsAnnouncedAndSaved()
+    {
+        Fixture_ f{};
+        QSignalSpy changed(&f.vault, &Vault::wordsChanged);
+
+        f.vault.addToDictionary(u"Pangloss"_s);
+        f.vault.addToDictionary(u"Cunegonde"_s);
+
+        QCOMPARE(changed.count(), 2);
+        QVERIFY(f.vault.dictionary().contains(u"Pangloss"_s));
+        QCOMPARE(
+            f.read(u".suzuri/dictionary.txt"_s),
+            QByteArray("Cunegonde\nPangloss\n"));
+
+        // A word already there is no change
+        f.vault.addToDictionary(u"Pangloss"_s);
+        QCOMPARE(changed.count(), 2);
+    }
+
+    // Adding reads the file again, so what was added or removed by hand since
+    // the vault opened stays as the file has it
+    void addingKeepsTheFileAsEditedByHand()
+    {
+        Fixture_ f{};
+        f.vault.addToDictionary(u"Pangloss"_s);
+
+        f.write(u".suzuri/dictionary.txt"_s, "Candide\n");
+        f.vault.addToDictionary(u"Cunegonde"_s);
+
+        QCOMPARE(
+            f.read(u".suzuri/dictionary.txt"_s),
+            QByteArray("Candide\nCunegonde\n"));
+        QVERIFY(f.vault.dictionary().contains(u"Candide"_s));
+        QVERIFY(!f.vault.dictionary().contains(u"Pangloss"_s));
+    }
+
+    // Ignored words are announced, kept apart from the dictionary, and not
+    // written anywhere
+    void anIgnoredWordIsAnnouncedButNotSaved()
+    {
+        Fixture_ f{};
+        QSignalSpy changed(&f.vault, &Vault::wordsChanged);
+
+        f.vault.ignoreWord(u"Thunder"_s);
+        f.vault.ignoreWord(u"Thunder"_s);
+
+        QCOMPARE(changed.count(), 1);
+        QVERIFY(f.vault.ignoredWords().contains(u"Thunder"_s));
+        QVERIFY(!f.vault.dictionary().contains(u"Thunder"_s));
+        QVERIFY(!f.exists(u".suzuri/dictionary.txt"_s));
+    }
+
     // --- Trash refusals -----------------------------------------------------
 
     // Each of these is refused before the system trash is asked for anything

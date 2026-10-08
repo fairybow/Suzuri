@@ -137,6 +137,24 @@ Ctrl+F opens a find bar across the top of the text, and Ctrl+H opens it with a s
 - Esc closes the bar and leaves the last match selected
 - A search covers the one file. Nothing about it is saved
 
+## Spelling
+
+Misspelled words are underlined with a red wave as you write. Spelling is checked against a Hunspell dictionary, the format LibreOffice uses. US English is bundled.
+
+- The word you are typing isn't marked until the cursor leaves it
+- Right-click a marked word for up to five suggestions. Choosing one replaces the word, and one undo puts it back. A suggestion takes the word's apostrophe, straight or curly
+- **Add to dictionary** adds the word to the vault's own dictionary. Words in the Common Vault's dictionary are accepted in every vault
+- **Ignore** accepts the word in this vault until the vault is closed
+- A possessive is added or ignored without its 's: choosing either on "Pangloss's" takes "Pangloss"
+- A word added in lowercase is also accepted capitalized and in capitals. One added with capitals is accepted as written and in capitals only
+- An added or ignored word is accepted as a possessive too, and as a part of a hyphenated word: with "Pangloss" added, so are "Pangloss's" and "Pangloss-like"
+- "don't" and "well-known" are each checked as one word. A hyphenated word is accepted when each of its parts is
+- Words with a digit in them aren't checked, and neither is Chinese or Japanese text
+- A vault's dictionary is `.suzuri/dictionary.txt`, one word per line, and can be edited by hand. A hand edit takes effect when the vault is next opened, or when a word is next added from the menu
+- Checking can be turned off, and the language chosen, per vault in Settings
+- For another language, put its dictionary's two files (`.aff` and `.dic`) in Suzuri's dictionaries folder. The Open folder button beside the language list opens it. A dictionary the vault names but the folder doesn't have is listed as not installed, and nothing is checked
+- A dictionary in a text encoding Suzuri can't convert is listed as an unsupported encoding, and nothing is checked while it is chosen. UTF-8 and Latin-1 (ISO 8859-1) dictionaries always work; whether others do depends on how Qt was built
+
 ## PDFs and images
 
 Read-only views.
@@ -162,7 +180,7 @@ Shown in vault windows and pop-outs, for the active text tab. Empty over a PDF, 
 
 Ctrl+, or the gear beside the vault switcher. Settings belong to the vault and apply as you change them.
 
-- **Editor**: line numbers, wrap lines, left/right margin, highlight current line, selection handles, tab width, center on scroll, double-click selects whitespace
+- **Editor**: line numbers, wrap lines, left/right margin, highlight current line, selection handles, tab width, center on scroll, double-click selects whitespace, check spelling, spelling language
 - **Appearance**: text font, bold, italic, font size
 - **Status bar**: the word counter and the cursor position, and which parts of each to show
 
@@ -172,14 +190,15 @@ A Common Vault file opened in a project's window uses that project's settings.
 
 | File | Holds | Meant to be committed or synced? |
 |---|---|---|
-| `.suzuri/settings.json` | Editor and status bar settings | Yes |
+| `.suzuri/settings.json` | Editor, spelling, and status bar settings | Yes |
+| `.suzuri/dictionary.txt` | Words added to the vault's dictionary | Yes |
 | `.suzuri/appearance.json` | Font settings | Yes |
 | `.suzuri/workspace.json` | Window, pane, and tab layout | No, it is specific to one machine |
 | `.suzuri/.gitignore` | Ignores `workspace.json` | Yes |
 
-Deleting `.suzuri/` while the vault is closed resets its settings and layout and nothing else.
+Deleting `.suzuri/` while the vault is closed resets its settings, layout, and dictionary, and nothing else.
 
-The list of known vaults is kept outside any vault, in Suzuri's application data folder.
+The list of known vaults is kept outside any vault, in Suzuri's application data folder. So are the spelling dictionaries, in its `dictionaries` folder. The bundled one is copied there on launch if it's missing, and never overwritten.
 
 ## Keyboard shortcuts
 
@@ -210,6 +229,7 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - **Bold and italic font settings**, since there is no Markdown styling to carry emphasis
 - **A margin setting** in place of "Readable line length", and a switch to turn wrapping off
 - **Find has Match case and Whole word.** Obsidian's search in a file has neither. Suzuri's highlights also stay while you edit, until the bar is closed
+- **One spelling language per vault.** Obsidian can check several at once
 - **TIFF images** are supported. SVG and AVIF are not
 - **Images zoom**, like PDFs
 - **File and folder icons** in the file tree
@@ -223,5 +243,6 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - On Windows, while Suzuri is open, other programs can't rename or delete a folder if one of its subfolders has been expanded in a file tree or holds an open file. Suzuri's own rename, move, and delete are unaffected
 - A moved or renamed vault folder is a new vault to Suzuri: open it again from its new place. Its settings and layout travel with it
 - Word counts run low for Thai, Lao, Khmer, and Myanmar text
+- Spelling suggestions can take a moment to appear for a long or badly garbled word
 - Right-to-left layouts are not supported
 - macOS and Linux builds exist but are not well tested

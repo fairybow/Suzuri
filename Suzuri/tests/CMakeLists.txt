@@ -14,8 +14,8 @@
 find_package(Qt6 REQUIRED COMPONENTS Test)
 
 # What any target here needs to compile the app's headers: the same include
-# root, the same APP_DEBUG definition, Coco, the same Qt modules, and the same
-# compiler options.
+# root, the same APP_DEBUG definition, Coco, Hunspell, the same Qt modules,
+# and the same compiler options.
 function(app_configure_test_target name)
     target_include_directories(${name} PRIVATE
         ${PROJECT_SOURCE_DIR}/src
@@ -34,6 +34,7 @@ function(app_configure_test_target name)
 
     target_link_libraries(${name} PRIVATE
         Coco::Coco
+        hunspell
         Qt6::Core
         Qt6::Gui
         Qt6::PdfWidgets
@@ -91,10 +92,21 @@ function(app_add_test name)
 endfunction()
 
 app_add_test(FileTypesTest)
+app_add_test(MisspellingTest)
 app_add_test(PrimeDocumentTest)
+app_add_test(SpellCheckerTest)
+app_add_test(SpellCheckersTest)
+app_add_test(SpellWordsTest)
 app_add_test(TextCountsTest)
 app_add_test(TextFileModelTest)
 app_add_test(TextSearchTest)
 app_add_test(VaultTest)
 app_add_test(VaultTimedTest)
 app_add_test(VaultTreeModelTest)
+app_add_test(WordListTest)
+
+# The dictionary that ships with the app, compiled into the one test that
+# installs it
+target_sources(SpellCheckersTest PRIVATE
+    ${PROJECT_SOURCE_DIR}/resources/Dictionaries.qrc
+)

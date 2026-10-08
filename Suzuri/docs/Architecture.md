@@ -29,7 +29,7 @@ Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.c
 | Folder | Holds |
 |---|---|
 | `src/` | `Main.cpp`, `App`, and the log window |
-| `core/` | `Vault`, the vault tree model, configuration, file IO, file types, action ids |
+| `core/` | `Vault`, the vault tree model, configuration, file IO, file types, spellcheck, action ids |
 | `models/` | One buffer class per file type, and the prime document |
 | `views/` | One view class per file type, and the parts only views use: the text editor with its selection handles, the find bar and the search functions behind it, and the zoom control with its state |
 | `ui/` | The windows and what they open directly: workspace persistence, Go to File, the vault picker, the status bar items |
@@ -50,7 +50,7 @@ Includes run one way, from the top of this list down:
 
 `Vault` and everything it owns create no window or widget and refer to none, so the data layer can't come to depend on one. They are not limited to QtCore: a text buffer is a `QTextDocument` with a plain-text layout (QtGui and QtWidgets), an image buffer holds a `QPixmap`, and a PDF buffer a `QPdfDocument`. `VaultTreeModel` and the configuration types are QtCore only.
 
-[Coco](https://github.com/fairybow/Coco), a submodule, supplies paths (`Coco::Path`), logging, debounce timers, and the single-instance guard.
+[Coco](https://github.com/fairybow/Coco), a submodule, supplies paths (`Coco::Path`), logging, debounce timers, and the single-instance guard. [Hunspell](https://github.com/hunspell/hunspell), also a submodule and pinned to a release tag, checks spelling. It has no CMake build of its own, so Suzuri's CMake builds its sources as a static library, with its warnings off.
 
 ## Ownership
 
@@ -72,8 +72,8 @@ flowchart TD
 
 | Owner | Owns |
 |---|---|
-| `App` | The common `Vault`, every project `Vault`, `AppConfig`, the app-wide actions. Tracks each `VaultWindow` and the `ManageVaults` window |
-| `Vault` | Its file buffers, a watcher over its open files, its `VaultTreeModel`, its `VaultConfig`, its `.suzuri/` folder |
+| `App` | The common `Vault`, every project `Vault`, `AppConfig`, the app-wide actions, the spelling dictionaries (`SpellCheckers`). Tracks each `VaultWindow` and the `ManageVaults` window |
+| `Vault` | Its file buffers, a watcher over its open files, its `VaultTreeModel`, its `VaultConfig`, its dictionary and ignored words, its `.suzuri/` folder |
 | `BaseWindow` | The window's `TabPaneTree`, its action registry, its status bar |
 | `VaultWindow` | Its `Sidebar`, its `WorkspaceFile`, its settings dialog, and the creation of its pop-outs. Borrows two vaults |
 | `PopoutWindow` | Nothing of its own. Its `VaultWindow` wires it |
@@ -327,13 +327,14 @@ Paths are compared as values, element by element, so slash direction and repeate
 
 ## Configuration and persistence
 
-All of it is JSON, read and written by stateless free functions (`core/JsonIo.h` over `core/Io.h`, which writes atomically). A missing or unreadable file reads as an empty object, so callers fall to their defaults.
+All of it but a vault's dictionary is JSON, read and written by stateless free functions (`core/JsonIo.h` over `core/Io.h`, which writes atomically). A missing or unreadable file reads as an empty object, so callers fall to their defaults.
 
 | What | File | Type | Owner |
 |---|---|---|---|
 | Known vaults, session, last-used folder | `suzuri.json` in the app data folder | `AppConfig` | `App` |
 | Per-vault settings | `.suzuri/settings.json`, `.suzuri/appearance.json` | `VaultConfig` | `Vault` |
 | Window and tab layout | `.suzuri/workspace.json` | `WorkspaceFile` | `VaultWindow` |
+| A vault's dictionary | `.suzuri/dictionary.txt`, one word per line | `WordList` | `Vault` |
 
 - **Each config type holds its own defaults.** A missing key falls to the default. There is no chain of fallbacks between vault and app settings.
 - **Only set keys are written.**
@@ -363,6 +364,28 @@ All of it is JSON, read and written by stateless free functions (`core/JsonIo.h`
 - **Restore runs before the window is shown,** and observation starts after it, so rebuilding the layout doesn't schedule a save of what was just read.
 - **Scroll is applied after first show.** A scrollbar has no range until the view is laid out.
 - **Every key is declared in `core/WorkspaceKeys.h`.**
+
+## Spelling
+
+```mermaid
+flowchart TD
+    App["App"] -->|owns| SC["SpellCheckers"]
+    SC -->|owns, one per language| C["SpellChecker (Hunspell)"]
+    V["Vault"] -->|owns| W["dictionary + ignored words (WordList)"]
+    VW["VaultWindow::makeView_"] -.->|hands over| E["TextEditor"]
+    E -.->|borrows| C
+```
+
+- **One checker per language, shared by every vault.** A dictionary takes a moment and several megabytes to load, so `SpellCheckers` loads one the first time a language is asked for and keeps it. Dictionaries are read from the dictionaries folder in the app data folder, where any pair of `.aff` and `.dic` files is a language. Hunspell reads from disk, so the bundled one is copied out of the resources at launch, and a file already there is never replaced.
+- **A checker's answers never change,** because nothing is added to it after it loads. So it keeps every answer, and the editor can ask about each word in view at every paint.
+- **A vault's own words are held apart from the checker.** A checker shared by every vault can't hold one vault's words. `Vault` holds its dictionary (from `.suzuri/dictionary.txt`) and its ignored words as `WordList`s, which apply Hunspell's rule for added words: lowercase also accepts capitals, capitals accept only themselves.
+- **The window's vault decides, as for settings.** `VaultWindow::makeView_` hands each text view the checker for its vault's language (none while spellcheck is off) and one combined list: its vault's dictionary and ignored words, and the Common Vault's dictionary. It hands them over again on `configChanged`, and on `wordsChanged` from either vault.
+- **Views don't know their vault.** Add to dictionary and Ignore leave the view as signals, which `makeView_` connects to the window's vault.
+- **Adding a word reads the file first.** The file, with the word added, becomes the dictionary, so a hand edit made while the vault is open isn't written over. A file that exists but can't be read is never written.
+- **One rule judges a word.** `core/Misspelling.h` takes the checker and the combined list, for the underlines and for the context menu. The checker is asked first, since it remembers its answers and most words are in the dictionary. Holding the vault's words apart has a cost that this rule pays: Hunspell accepts a possessive or a hyphenated word by its own rules, from its own words alone, so the rule tries an accepted word's possessive, and a hyphenated word's parts, itself. Add to dictionary and Ignore store a possessive without its 's for the same reason.
+- **A dictionary Qt can't convert is known without loading it.** `SpellChecker` reads the encoding an affix file declares and tests it with the same converters a checker is built with, so Settings can mark such a dictionary and can't disagree with the checker about which ones work.
+- **One rule finds the words.** `core/SpellWords.h` decides what a word is, for the underlines and for the context menu. It is not the word counter's rule: a count wants "e.g." as one word, a spelling check wants its parts.
+- **Underlines are painted by the editor,** over the text and for the visible blocks only, as search highlights are. Nothing is stored about the text, so an edit needs no bookkeeping: the next paint finds the words again.
 
 ## Opening and creating vaults
 

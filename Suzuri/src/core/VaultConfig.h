@@ -108,6 +108,11 @@ public:
     static constexpr bool DEFAULT_DOUBLE_CLICK_WHITESPACE = true;
     static constexpr bool DEFAULT_SELECTION_HANDLES = false;
 
+    // Spellcheck (core/SpellChecker.h). The language is a dictionary's name,
+    // the stem of its .aff and .dic files (core/SpellCheckers.h)
+    static constexpr bool DEFAULT_SPELLCHECK = true;
+    static constexpr auto DEFAULT_SPELLCHECK_LANGUAGE = "en_US";
+
     static constexpr int MIN_LEFT_RIGHT_MARGIN = 0;
     static constexpr int MAX_LEFT_RIGHT_MARGIN = 40;
 
@@ -221,6 +226,18 @@ public:
     [[nodiscard]] bool selectionHandles() const
     {
         return selectionHandles_.value_or(DEFAULT_SELECTION_HANDLES);
+    }
+
+    [[nodiscard]] bool spellcheck() const
+    {
+        return spellcheck_.value_or(DEFAULT_SPELLCHECK);
+    }
+
+    [[nodiscard]] QString spellcheckLanguage() const
+    {
+        return spellcheckLanguage_.isEmpty()
+                   ? QString::fromLatin1(DEFAULT_SPELLCHECK_LANGUAGE)
+                   : spellcheckLanguage_;
     }
 
     // --- Setters -------------------------------------------------------------
@@ -354,6 +371,21 @@ public:
         return setBool_(selectionHandles_, selectionHandles(), shown);
     }
 
+    [[nodiscard]] bool setSpellcheck(bool enabled)
+    {
+        return setBool_(spellcheck_, spellcheck(), enabled);
+    }
+
+    [[nodiscard]] bool setSpellcheckLanguage(const QString& language)
+    {
+        if (language.isEmpty() || language == spellcheckLanguage()) {
+            return false;
+        }
+
+        spellcheckLanguage_ = language;
+        return true;
+    }
+
     // --- IO ------------------------------------------------------------------
 
     // Read the vault's config files into memory. A missing file (a new vault,
@@ -417,6 +449,12 @@ public:
             DOUBLE_CLICK_WHITESPACE_KEY_,
             doubleClickWhitespace_);
         readBool_(settings, SELECTION_HANDLES_KEY_, selectionHandles_);
+        readBool_(settings, SPELLCHECK_KEY_, spellcheck_);
+
+        if (auto value = settings.value(SPELLCHECK_LANGUAGE_KEY_);
+            value.isString() && !value.toString().isEmpty()) {
+            spellcheckLanguage_ = value.toString();
+        }
     }
 
     // Serialize the set keys and write both files, each atomically. Both are
@@ -475,6 +513,11 @@ public:
             DOUBLE_CLICK_WHITESPACE_KEY_,
             doubleClickWhitespace_);
         writeBool_(settings, SELECTION_HANDLES_KEY_, selectionHandles_);
+        writeBool_(settings, SPELLCHECK_KEY_, spellcheck_);
+
+        if (!spellcheckLanguage_.isEmpty()) {
+            settings[SPELLCHECK_LANGUAGE_KEY_] = spellcheckLanguage_;
+        }
 
         auto appearance_saved = JsonIo::write(
             appearance,
@@ -524,6 +567,9 @@ private:
     static inline const QString DOUBLE_CLICK_WHITESPACE_KEY_ =
         u"doubleClickWhitespace"_s;
     static inline const QString SELECTION_HANDLES_KEY_ = u"selectionHandles"_s;
+    static inline const QString SPELLCHECK_KEY_ = u"spellcheck"_s;
+    static inline const QString SPELLCHECK_LANGUAGE_KEY_ =
+        u"spellcheckLanguage"_s;
 
     // Empty / nullopt == unset; the getter substitutes the default
     QString textFontFamily_{};
@@ -549,6 +595,9 @@ private:
     std::optional<bool> lineHighlight_{};
     std::optional<bool> doubleClickWhitespace_{};
     std::optional<bool> selectionHandles_{};
+
+    std::optional<bool> spellcheck_{};
+    QString spellcheckLanguage_{};
 
     static Coco::Path appearancePath_(const Coco::Path& vaultRoot)
     {
