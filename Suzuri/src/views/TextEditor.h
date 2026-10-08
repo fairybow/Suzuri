@@ -20,6 +20,7 @@
 #include <QFontMetricsF>
 #include <QList>
 #include <QMargins>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
@@ -300,6 +301,22 @@ public:
     }
 
 protected:
+    // What a copy, a cut, or a drag of the selection carries: the selected
+    // text exactly as stored, as plain text only, with paragraph breaks as
+    // '\n' as in a saved file. Qt's own rewrites a no-break space as a space
+    // and U+2028 as a line break, and adds rich formats that carry the
+    // editor's font into whatever the text is pasted into
+    QMimeData* createMimeDataFromSelection() const override
+    {
+        auto text = textCursor().selectedText();
+        text.replace(QChar::ParagraphSeparator, QChar(u'\n'));
+
+        auto* data = new QMimeData;
+        data->setText(text);
+
+        return data;
+    }
+
     // The base applies a new font to the document; the gutter's width and the
     // tab width are measured in that font, so they follow. The line
     // highlight's brush is read from the palette when it is built, so a new

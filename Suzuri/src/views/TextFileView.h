@@ -569,15 +569,17 @@ private:
     // The editor's context menu. Over a misspelled word, it opens with what
     // the dictionary suggests, then a way to add the word to the vault's
     // dictionary or ignore it for now; those two go out as requests, since a
-    // view doesn't know its vault. Over anything else, the menu is only
-    // Undo/Redo.
+    // view doesn't know its vault. Then, always, Undo/Redo, the clipboard
+    // and Delete, and Select All.
     //
     // Undo/Redo are routed to the model's shared stack rather than the
-    // editor's disabled document. The shortcut is a display-only hint (text
-    // after '\t'), so nothing here registers a binding that competes with the
-    // window's document.undo / document.redo actions; the enabled state comes
-    // from the model, and a disabled entry can't be chosen, so reading exec()'s
-    // return needs no availability re-check.
+    // editor's disabled document. The rest are the editor's own: an edit they
+    // make reaches the buffer as typing does. Each shortcut is a display-only
+    // hint (menuText_), so nothing here registers a binding that competes
+    // with the window's actions or the editor's own keys. An item that can't
+    // apply is disabled, and a disabled item can't be chosen, so reading
+    // exec()'s return needs no availability re-check. Delete removes the
+    // selection only.
     //
     // A QAbstractScrollArea gives the request's position in its viewport's
     // coordinates, so the menu is placed from the viewport
@@ -611,17 +613,36 @@ private:
             menu.addSeparator();
         }
 
-        auto* undo = menu.addAction(
-            tr("Undo") + QChar(QChar::Tabulation) +
-            QKeySequence(QKeySequence::Undo)
-                .toString(QKeySequence::NativeText));
+        auto has_selection = editor_->textCursor().hasSelection();
+        auto writable = !editor_->isReadOnly();
+
+        auto* undo = menu.addAction(menuText_(tr("Undo"), QKeySequence::Undo));
         undo->setEnabled(model_->isUndoAvailable());
 
-        auto* redo = menu.addAction(
-            tr("Redo") + QChar(QChar::Tabulation) +
-            QKeySequence(QKeySequence::Redo)
-                .toString(QKeySequence::NativeText));
+        auto* redo = menu.addAction(menuText_(tr("Redo"), QKeySequence::Redo));
         redo->setEnabled(model_->isRedoAvailable());
+
+        menu.addSeparator();
+
+        auto* cut = menu.addAction(menuText_(tr("Cut"), QKeySequence::Cut));
+        cut->setEnabled(has_selection && writable);
+
+        auto* copy = menu.addAction(menuText_(tr("Copy"), QKeySequence::Copy));
+        copy->setEnabled(has_selection);
+
+        auto* paste =
+            menu.addAction(menuText_(tr("Paste"), QKeySequence::Paste));
+        paste->setEnabled(editor_->canPaste());
+
+        auto* remove =
+            menu.addAction(menuText_(tr("Delete"), QKeySequence::Delete));
+        remove->setEnabled(has_selection && writable);
+
+        menu.addSeparator();
+
+        auto* select_all = menu.addAction(
+            menuText_(tr("Select All"), QKeySequence::SelectAll));
+        select_all->setEnabled(!editor_->document()->isEmpty());
 
         auto* chosen = menu.exec(editor_->viewport()->mapToGlobal(pos));
 
@@ -633,6 +654,16 @@ private:
             model_->undo();
         } else if (chosen == redo) {
             model_->redo();
+        } else if (chosen == cut) {
+            editor_->cut();
+        } else if (chosen == copy) {
+            editor_->copy();
+        } else if (chosen == paste) {
+            editor_->paste();
+        } else if (chosen == remove) {
+            editor_->textCursor().removeSelectedText();
+        } else if (chosen == select_all) {
+            editor_->selectAll();
         } else if (chosen == add_to_dictionary) {
             emit addToDictionaryRequested(Misspelling::withoutPossessive(word));
         } else if (chosen == ignore) {
@@ -642,6 +673,16 @@ private:
             // the action, which a style may have given a shortcut marker
             word_cursor.insertText(suggestions.at(i));
         }
+    }
+
+    // A menu item's text with its shortcut after a tab, which a menu shows
+    // right-aligned as it would a bound shortcut's. Display only: it binds
+    // nothing
+    [[nodiscard]] static QString
+    menuText_(const QString& text, QKeySequence::StandardKey key)
+    {
+        return text + QChar(QChar::Tabulation) +
+               QKeySequence(key).toString(QKeySequence::NativeText);
     }
 
     // What the dictionary offers for a word. The dictionary gives a plain
