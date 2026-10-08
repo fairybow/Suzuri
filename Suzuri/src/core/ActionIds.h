@@ -44,6 +44,11 @@ using namespace Qt::StringLiterals;
 //   vault.      the vault as a whole, beyond any one file or folder in it — its
 //               settings. Per-window like file., since each window edits its
 //               own vault
+//   text.       the text that has keyboard focus: the editor, or a text
+//               field such as the find bar's. The clipboard and selection
+//               commands act there, where the keys for them already work, so
+//               from the menu they reach the find field as readily as the
+//               editor. Nothing else has text to act on
 //   app.        App owns the behaviour and windows only display it — the
 //               AppActions set. This prefix doubles as the marker for what
 //               travels down from App rather than being minted per window
@@ -56,6 +61,12 @@ using namespace Qt::StringLiterals;
 
 inline const QString DOCUMENT_UNDO = u"document.undo"_s;
 inline const QString DOCUMENT_REDO = u"document.redo"_s;
+
+inline const QString TEXT_CUT = u"text.cut"_s;
+inline const QString TEXT_COPY = u"text.copy"_s;
+inline const QString TEXT_PASTE = u"text.paste"_s;
+inline const QString TEXT_DELETE = u"text.delete"_s;
+inline const QString TEXT_SELECT_ALL = u"text.selectAll"_s;
 
 inline const QString FILE_NEW = u"file.new"_s;
 inline const QString FILE_OPEN = u"file.open"_s;

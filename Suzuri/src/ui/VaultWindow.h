@@ -446,6 +446,13 @@ private:
         edit_menu->addAction(action(ActionIds::DOCUMENT_UNDO));
         edit_menu->addAction(action(ActionIds::DOCUMENT_REDO));
         edit_menu->addSeparator();
+        edit_menu->addAction(action(ActionIds::TEXT_CUT));
+        edit_menu->addAction(action(ActionIds::TEXT_COPY));
+        edit_menu->addAction(action(ActionIds::TEXT_PASTE));
+        edit_menu->addAction(action(ActionIds::TEXT_DELETE));
+        edit_menu->addSeparator();
+        edit_menu->addAction(action(ActionIds::TEXT_SELECT_ALL));
+        edit_menu->addSeparator();
         edit_menu->addAction(action(ActionIds::VIEW_FIND));
         edit_menu->addAction(action(ActionIds::VIEW_REPLACE));
         edit_menu->addAction(action(ActionIds::VIEW_FIND_NEXT));
