@@ -103,10 +103,12 @@ public:
                 continue;
             }
 
-            // simplified makes each run of spaces and tabs one space
+            // simplified makes each run of spaces and tabs one space. Any
+            // line starting with SET is the setting, its first word whole or
+            // not, as Hunspell reads it
             const auto words = line.simplified().split(' ');
 
-            if (words.size() >= 2 && words.at(0) == "SET") {
+            if (words.size() >= 2) {
                 return words.at(1).toStdString();
             }
         }

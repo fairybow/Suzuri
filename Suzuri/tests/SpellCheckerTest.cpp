@@ -307,8 +307,9 @@ private slots:
             << QByteArray("SET\t\tUTF-8\r\n") << QByteArray("UTF-8");
         QTest::newRow("not named")
             << QByteArray("TRY abc\n") << QByteArray("ISO8859-1");
-        QTest::newRow("a longer word that starts the same")
-            << QByteArray("SETTING UTF-8\n") << QByteArray("ISO8859-1");
+        QTest::newRow(
+            "a longer word that starts the same, as Hunspell reads it")
+            << QByteArray("SETTING UTF-8\n") << QByteArray("UTF-8");
         QTest::newRow("an empty file")
             << QByteArray() << QByteArray("ISO8859-1");
     }
