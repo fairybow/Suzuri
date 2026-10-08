@@ -50,6 +50,8 @@ public:
     SpellCheckers(const SpellCheckers&) = delete;
     SpellCheckers& operator=(const SpellCheckers&) = delete;
 
+    [[nodiscard]] Coco::Path folder() const { return folder_; }
+
     // Copy each dictionary file compiled into the app (resources/
     // Dictionaries.qrc) into folder, unless a file of that name is already
     // there. Hunspell reads its dictionaries from disk, so they can't stay in

@@ -500,8 +500,11 @@ private:
     void onSettingsRequested_()
     {
         if (!settingsDialog_) {
-            settingsDialog_ =
-                new SettingsDialog(vault_, action(ActionIds::APP_QUIT), this);
+            settingsDialog_ = new SettingsDialog(
+                vault_,
+                spellCheckers_,
+                action(ActionIds::APP_QUIT),
+                this);
         }
 
         settingsDialog_->open();

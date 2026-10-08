@@ -12,16 +12,28 @@
 
 #pragma once
 
+#include <QAbstractButton>
+#include <QComboBox>
+#include <QDesktopServices>
+#include <QHBoxLayout>
+#include <QLocale>
+#include <QPushButton>
+#include <QShowEvent>
+#include <QString>
+#include <QUrl>
 #include <QWidget>
 
 #include <Coco/Debug.h>
 
+#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultConfig.h"
 #include "ui/settings/SettingsPage.h"
 #include "ui/widgets/DisplaySlider.h"
 
 namespace Suzuri::Ui {
+
+using namespace Qt::StringLiterals;
 
 // The settings dialog's Editor page, Obsidian's Editor tab: how the text
 // editor behaves and what it shows besides the text. The column, and how a
@@ -36,21 +48,39 @@ namespace Suzuri::Ui {
 // own, which Obsidian doesn't have.
 //
 // Spelling is a section of its own; Obsidian's Editor tab has a "Spellcheck"
-// switch too.
+// switch too. Its language list offers the dictionaries in the dictionaries
+// folder (SpellCheckers), read again each time the page is shown, so one put
+// there while the dialog was closed is offered when it next opens. Obsidian
+// can check several languages at once; a vault here checks one.
 class SettingsEditorPage : public SettingsPage
 {
     Q_OBJECT
 
 public:
-    SettingsEditorPage(Vault* vault, QWidget* parentSettingsDialog)
+    // spellCheckers is App's, borrowed for its list of languages
+    SettingsEditorPage(
+        Vault* vault,
+        SpellCheckers* spellCheckers,
+        QWidget* parentSettingsDialog)
         : SettingsPage(vault, parentSettingsDialog)
+        , spellCheckers_(spellCheckers)
     {
         setup_();
     }
 
     ~SettingsEditorPage() override { TRACER; }
 
+protected:
+    void showEvent(QShowEvent* event) override
+    {
+        SettingsPage::showEvent(event);
+        fillLanguages_();
+    }
+
 private:
+    SpellCheckers* spellCheckers_ = nullptr;
+    QComboBox* language_ = nullptr;
+
     void setup_()
     {
         setupDisplaySection_();
@@ -150,11 +180,107 @@ private:
 
         addHeading(tr("Spelling"));
 
-        addSwitch(
+        auto check = addSwitch(
             tr("Check spelling"),
             tr("Underline words that aren't in the dictionary."),
             config.spellcheck(),
             &VaultConfig::setSpellcheck);
+
+        // A drop-down of the dictionaries, and a button to open their folder.
+        // activated is the user's choice only, so refilling the list sets
+        // nothing
+        auto* control = new QWidget(content());
+        auto* control_layout = new QHBoxLayout(control);
+        control_layout->setContentsMargins(0, 0, 0, 0);
+
+        language_ = new QComboBox(control);
+        language_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+        control_layout->addWidget(language_);
+
+        auto* open_folder = new QPushButton(tr("Open folder"), control);
+        control_layout->addWidget(open_folder);
+
+        connect(language_, &QComboBox::activated, this, [this](int index) {
+            vault()->setConfig(
+                &VaultConfig::setSpellcheckLanguage,
+                language_->itemData(index).toString());
+        });
+
+        connect(open_folder, &QPushButton::clicked, this, [this] {
+            QDesktopServices::openUrl(
+                QUrl::fromLocalFile(spellCheckers_->folder().toQString()));
+        });
+
+        fillLanguages_();
+
+        auto* row = addRow(
+            tr("Language"),
+            tr("The dictionary to check against. To add a language, place "
+               "its dictionary's .aff and .dic files in the dictionaries "
+               "folder."),
+            control);
+
+        row->setEnabled(check.toggle->isChecked());
+        connect(
+            check.toggle,
+            &QAbstractButton::toggled,
+            row,
+            &QWidget::setEnabled);
+    }
+
+    // List the installed dictionaries, each under its language's name, and
+    // select the vault's. A language the vault names but the folder lacks is
+    // listed too, as not installed, so the setting shows as it is rather than
+    // as some other language. Each item carries the dictionary's file name
+    void fillLanguages_()
+    {
+        if (!language_) {
+            return;
+        }
+
+        auto current = vault()->config().spellcheckLanguage();
+        auto languages = spellCheckers_->languages();
+
+        language_->clear();
+
+        for (const auto& language : languages) {
+            language_->addItem(languageName_(language), language);
+        }
+
+        if (!languages.contains(current)) {
+            language_->addItem(
+                tr("%1 (not installed)").arg(languageName_(current)),
+                current);
+        }
+
+        language_->setCurrentIndex(language_->findData(current));
+    }
+
+    // A dictionary's file name as a language: "en_US" is "English (United
+    // States)" and "en" is "English". A name that is more than a language and
+    // territory, such as "de_DE_frami", is shown as it is, since its locale
+    // alone wouldn't tell it from "de_DE"
+    [[nodiscard]] static QString languageName_(const QString& fileName)
+    {
+        QLocale locale(fileName);
+
+        if (locale.language() == QLocale::C) {
+            return fileName;
+        }
+
+        auto language = QLocale::languageToString(locale.language());
+
+        if (locale.name() == fileName) {
+            return u"%1 (%2)"_s.arg(
+                language,
+                QLocale::territoryToString(locale.territory()));
+        }
+
+        if (QLocale::languageToCode(locale.language()) == fileName) {
+            return language;
+        }
+
+        return fileName;
     }
 };
 

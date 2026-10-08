@@ -31,6 +31,7 @@
 
 #include <Coco/Debug.h>
 
+#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "ui/UiConstants.h"
 #include "ui/settings/SettingsAppearancePage.h"
@@ -61,7 +62,8 @@ namespace Suzuri::Ui {
 // on close, so it reopens on the page last viewed — as Obsidian's does within
 // a session. It borrows the Vault, the same object the window borrows; pages
 // edit settings through Vault::setConfig, which applies and saves them. No
-// setting-changed signal leaves the dialog
+// setting-changed signal leaves the dialog. It borrows App's SpellCheckers too,
+// for the Editor page's list of languages
 class SettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -69,10 +71,12 @@ class SettingsDialog : public QDialog
 public:
     SettingsDialog(
         Vault* vault,
+        SpellCheckers* spellCheckers,
         QAction* quitAction,
         QWidget* parentVaultWindow)
         : QDialog(parentVaultWindow)
         , vault_(vault)
+        , spellCheckers_(spellCheckers)
     {
         setup_(quitAction);
     }
@@ -95,6 +99,9 @@ private:
 
     Vault* vault_ = nullptr;
 
+    // App's dictionaries, for the Editor page's language list. Not owned
+    SpellCheckers* spellCheckers_ = nullptr;
+
     QLabel* vaultName_ = new QLabel(this);
     QListWidget* nav_ = new QListWidget(this);
     QStackedWidget* pages_ = new QStackedWidget(this);
@@ -113,7 +120,9 @@ private:
         setupNavColumn_(name);
 
         addGroupTitle_(tr("Options"));
-        addPage_(tr("Editor"), new SettingsEditorPage(vault_, this));
+        addPage_(
+            tr("Editor"),
+            new SettingsEditorPage(vault_, spellCheckers_, this));
         addPage_(tr("Appearance"), new SettingsAppearancePage(vault_, this));
         addPage_(tr("Status bar"), new SettingsStatusBarPage(vault_, this));
 
