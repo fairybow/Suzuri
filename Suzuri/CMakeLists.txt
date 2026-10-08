@@ -194,6 +194,7 @@ set(APP_HEADERS
     src/core/FileTypes.h
     src/core/Io.h
     src/core/JsonIo.h
+    src/core/Misspelling.h
     src/core/Publication.h
     src/core/SpellChecker.h
     src/core/SpellCheckers.h

@@ -38,6 +38,7 @@
 #include <Coco/Debug.h>
 #include <Coco/Time.h>
 
+#include "core/Misspelling.h"
 #include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
 #include "core/WordList.h"
@@ -633,9 +634,9 @@ private:
         } else if (chosen == redo) {
             model_->redo();
         } else if (chosen == add_to_dictionary) {
-            emit addToDictionaryRequested(word);
+            emit addToDictionaryRequested(Misspelling::withoutPossessive(word));
         } else if (chosen == ignore) {
-            emit ignoreWordRequested(word);
+            emit ignoreWordRequested(Misspelling::withoutPossessive(word));
         } else if (auto i = suggestion_actions.indexOf(chosen); i >= 0) {
             // One edit, so one undo step. The text comes from the list, not
             // the action, which a style may have given a shortcut marker

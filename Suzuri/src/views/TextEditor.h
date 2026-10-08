@@ -44,6 +44,7 @@
 
 #include <Coco/Debug.h>
 
+#include "core/Misspelling.h"
 #include "core/SpellChecker.h"
 #include "core/SpellWords.h"
 #include "core/WordList.h"
@@ -125,10 +126,10 @@ private:
 // is the one under the mouse, not the one after the nearest cursor position.
 //
 // Spelling: with a SpellChecker set, each misspelled word in view gets a wavy
-// underline (paintMisspellings_). A word is misspelled when the accepted words
-// (the vault's own, set by the view's host) don't have it and the checker
-// doesn't take it. Nothing is stored about the text: the words in view are
-// found and looked up at each paint, and the checker remembers its answers.
+// underline (paintMisspellings_). Misspelling::isMisspelled decides which,
+// from the checker and the accepted words (the vault's own, set by the view's
+// host). Nothing is stored about the text: the words in view are found and
+// looked up at each paint, and the checker remembers its answers.
 //
 // Selection handles (views/SelectionHandles.h): two draggable teardrops under
 // the ends of a selection. The editor's part is to paint them after the text
@@ -249,8 +250,8 @@ public:
     // False whenever no checker is set
     [[nodiscard]] bool isMisspelled(const QString& word) const
     {
-        return spellChecker_ && !acceptedWords_.contains(word) &&
-               !spellChecker_->isCorrect(word);
+        return spellChecker_ &&
+               Misspelling::isMisspelled(*spellChecker_, acceptedWords_, word);
     }
 
     // A cursor selecting the word (SpellWords::find) at a viewport position,
