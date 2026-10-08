@@ -402,6 +402,8 @@ private:
     QList<TextSearch::Match> searchMatches_{};
     SpellChecker* spellChecker_ = nullptr;
     WordList acceptedWords_{};
+    // The number of the block the caret was in when it last moved
+    int caretBlock_ = 0;
     bool doubleClickWhitespace_ = false;
     SelectionHandles selectionHandles_{ this };
 
@@ -702,15 +704,53 @@ private:
     // The line highlight moves with the caret. So does the one word spared
     // an underline (paintMisspellings_): Qt repaints only the caret's own
     // rectangle on a move, which would leave the word the caret left unmarked
-    // and the one it arrived at marked
+    // and the one it arrived at marked. That word is in the block the caret
+    // left or the one it is in now, so those two are repainted and no more
     void onCursorPositionChanged_()
     {
         if (lineHighlight_) {
             updateExtraSelections_();
         }
 
+        auto block_number = textCursor().blockNumber();
+
         if (spellChecker_) {
-            viewport()->update();
+            updateBlocks_(caretBlock_, block_number);
+        }
+
+        caretBlock_ = block_number;
+    }
+
+    // Repaint the rows of two blocks (or of one, given twice), where in view.
+    // Walks the visible blocks as paintLineNumberArea_ does, and so never
+    // measures a block out of view: asking Qt for the geometry of a distant
+    // block lays out every block between it and the top of the view.
+    //
+    // Each rectangle reaches a little below its block, as far as an underline
+    // on the block's last row does
+    void updateBlocks_(int blockNumber, int otherBlockNumber)
+    {
+        auto reach =
+            qCeil(MISSPELLING_GAP + MISSPELLING_AMPLITUDE + MISSPELLING_WIDTH);
+
+        auto block = firstVisibleBlock();
+        auto top =
+            blockBoundingGeometry(block).translated(contentOffset()).top();
+
+        while (block.isValid() && top <= viewport()->height()) {
+            auto height = blockBoundingRect(block).height();
+            auto number = block.blockNumber();
+
+            if (number == blockNumber || number == otherBlockNumber) {
+                viewport()->update(QRect(
+                    0,
+                    qFloor(top),
+                    viewport()->width(),
+                    qCeil(height) + reach + 1));
+            }
+
+            top += height;
+            block = block.next();
         }
     }
 
