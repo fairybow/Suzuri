@@ -10,6 +10,8 @@
  * See the LICENSE file or visit <https://www.gnu.org/licenses/>
  */
 
+#include <string>
+
 #include <QByteArray>
 #include <QChar>
 #include <QDir>
@@ -279,6 +281,71 @@ private slots:
         Fixture_ f(affix_(), words_(), QString{});
         QVERIFY(QFile::remove(f.wordFile.toQString()));
 
+        SpellChecker checker(f.affixFile, f.wordFile);
+
+        QVERIFY(!checker.isValid());
+        QVERIFY(checker.isCorrect(u"xyzzy"_s));
+    }
+
+    void declaredEncoding_data()
+    {
+        QTest::addColumn<QByteArray>("affix");
+        QTest::addColumn<QByteArray>("expected");
+
+        QTest::newRow("named")
+            << QByteArray("SET UTF-8\n") << QByteArray("UTF-8");
+        QTest::newRow("named, another")
+            << QByteArray("SET ISO8859-15\n") << QByteArray("ISO8859-15");
+        QTest::newRow("after other lines")
+            << QByteArray("# a comment\nTRY abc\nSET KOI8-R\n")
+            << QByteArray("KOI8-R");
+        QTest::newRow("after a byte order mark") << QByteArray(
+                                                        "\xEF\xBB\xBF"
+                                                        "SET UTF-8\n")
+                                                 << QByteArray("UTF-8");
+        QTest::newRow("tabs and a carriage return")
+            << QByteArray("SET\t\tUTF-8\r\n") << QByteArray("UTF-8");
+        QTest::newRow("not named")
+            << QByteArray("TRY abc\n") << QByteArray("ISO8859-1");
+        QTest::newRow("a longer word that starts the same")
+            << QByteArray("SETTING UTF-8\n") << QByteArray("ISO8859-1");
+        QTest::newRow("an empty file")
+            << QByteArray() << QByteArray("ISO8859-1");
+    }
+
+    void declaredEncoding()
+    {
+        QFETCH(QByteArray, affix);
+        QFETCH(QByteArray, expected);
+
+        Fixture_ f(affix, "1\nhello\n", QString{});
+
+        QCOMPARE(
+            SpellChecker::declaredEncoding(f.affixFile),
+            expected.toStdString());
+    }
+
+    void aMissingAffixFileDeclaresTheDefaultEncoding()
+    {
+        QTemporaryDir folder{};
+        auto affix = Coco::Path(folder.filePath(u"none.aff"_s));
+
+        QCOMPARE(
+            SpellChecker::declaredEncoding(affix),
+            std::string("ISO8859-1"));
+    }
+
+    // The two encodings every build of Qt converts, and a name no build does
+    void canConvertTheEncodingsQtHas()
+    {
+        QVERIFY(SpellChecker::canConvert("UTF-8"));
+        QVERIFY(SpellChecker::canConvert("ISO8859-1"));
+        QVERIFY(!SpellChecker::canConvert("X-NO-SUCH-ENCODING"));
+    }
+
+    void aDictionaryInAnEncodingQtLacksIsNotValid()
+    {
+        Fixture_ f("SET X-NO-SUCH-ENCODING\n", "1\nhello\n", QString{});
         SpellChecker checker(f.affixFile, f.wordFile);
 
         QVERIFY(!checker.isValid());

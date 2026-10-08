@@ -114,6 +114,20 @@ public:
         return result;
     }
 
+    // Whether a language's dictionary can be checked against: both its files
+    // are in the folder, and they are in an encoding Qt converts here
+    // (SpellChecker::canConvert). The checker for one that can't is not
+    // valid, and marks nothing. Reads the affix file's lines each call and
+    // loads no dictionary
+    [[nodiscard]] bool isUsable(const QString& language) const
+    {
+        auto affix_file = affixFile_(language);
+
+        return affix_file.isFile() && wordFile_(language).isFile() &&
+               SpellChecker::canConvert(
+                   SpellChecker::declaredEncoding(affix_file));
+    }
+
     // The checker for a language, or nullptr when the folder has no
     // dictionary of that name. The pointer is good for as long as this
     // object is

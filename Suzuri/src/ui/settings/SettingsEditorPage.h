@@ -229,9 +229,11 @@ private:
     }
 
     // List the installed dictionaries, each under its language's name, and
-    // select the vault's. A language the vault names but the folder lacks is
-    // listed too, as not installed, so the setting shows as it is rather than
-    // as some other language. Each item carries the dictionary's file name
+    // select the vault's. One in an encoding that can't be converted here is
+    // marked as such, since choosing it checks nothing. A language the vault
+    // names but the folder lacks is listed too, as not installed, so the
+    // setting shows as it is rather than as some other language. Each item
+    // carries the dictionary's file name
     void fillLanguages_()
     {
         if (!language_) {
@@ -244,7 +246,13 @@ private:
         language_->clear();
 
         for (const auto& language : languages) {
-            language_->addItem(languageName_(language), language);
+            auto name = languageName_(language);
+
+            language_->addItem(
+                spellCheckers_->isUsable(language)
+                    ? name
+                    : tr("%1 (unsupported encoding)").arg(name),
+                language);
         }
 
         if (!languages.contains(current)) {

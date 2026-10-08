@@ -149,6 +149,26 @@ private slots:
         QCOMPARE(checkers.checker(QString{}), nullptr);
     }
 
+    void aLanguageIsUsableWhenItsEncodingConverts()
+    {
+        QTemporaryDir folder{};
+        writeDictionary_(folder, u"xx_YY"_s, "hello");
+        write_(folder, u"zz_ZZ.aff"_s, "SET X-NO-SUCH-ENCODING\n");
+        write_(folder, u"zz_ZZ.dic"_s, "1\nhello\n");
+        write_(folder, u"only_affix.aff"_s, "SET UTF-8\n");
+
+        SpellCheckers checkers{ Coco::Path(folder.path()) };
+
+        QVERIFY(checkers.isUsable(u"xx_YY"_s));
+        QVERIFY(!checkers.isUsable(u"zz_ZZ"_s));
+        QVERIFY(!checkers.isUsable(u"only_affix"_s));
+        QVERIFY(!checkers.isUsable(u"none"_s));
+
+        // Still a language, and its checker is the one that isn't valid
+        QVERIFY(checkers.languages().contains(u"zz_ZZ"_s));
+        QVERIFY(!checkers.checker(u"zz_ZZ"_s)->isValid());
+    }
+
     // --- The dictionary that ships with Suzuri ------------------------------
 
     void installBundledPutsEnglishInTheFolder()
