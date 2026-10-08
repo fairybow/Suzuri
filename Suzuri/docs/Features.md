@@ -145,12 +145,15 @@ Misspelled words are underlined with a red wave as you write. Spelling is checke
 - Right-click a marked word for up to five suggestions. Choosing one replaces the word, and one undo puts it back. A suggestion takes the word's apostrophe, straight or curly
 - **Add to dictionary** adds the word to the vault's own dictionary. Words in the Common Vault's dictionary are accepted in every vault
 - **Ignore** accepts the word in this vault until the vault is closed
+- A possessive is added or ignored without its 's: choosing either on "Pangloss's" takes "Pangloss"
 - A word added in lowercase is also accepted capitalized and in capitals. One added with capitals is accepted as written and in capitals only
+- An added or ignored word is accepted as a possessive too, and as a part of a hyphenated word: with "Pangloss" added, so are "Pangloss's" and "Pangloss-like"
 - "don't" and "well-known" are each checked as one word. A hyphenated word is accepted when each of its parts is
 - Words with a digit in them aren't checked, and neither is Chinese or Japanese text
 - A vault's dictionary is `.suzuri/dictionary.txt`, one word per line, and can be edited by hand. A hand edit takes effect when the vault is next opened, or when a word is next added from the menu
 - Checking can be turned off, and the language chosen, per vault in Settings
 - For another language, put its dictionary's two files (`.aff` and `.dic`) in Suzuri's dictionaries folder. The Open folder button beside the language list opens it. A dictionary the vault names but the folder doesn't have is listed as not installed, and nothing is checked
+- A dictionary in a text encoding Suzuri can't convert is listed as an unsupported encoding, and nothing is checked while it is chosen. UTF-8 and Latin-1 (ISO 8859-1) dictionaries always work; whether others do depends on how Qt was built
 
 ## PDFs and images
 
