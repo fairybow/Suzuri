@@ -25,9 +25,9 @@
 
 #include <Coco/Debug.h>
 
-#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultConfig.h"
+#include "core/spell/SpellCheckers.h"
 #include "ui/settings/SettingsPage.h"
 #include "ui/widgets/DisplaySlider.h"
 

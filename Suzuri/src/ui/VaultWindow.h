@@ -36,10 +36,10 @@
 #include "core/ActionIds.h"
 #include "core/AppActions.h"
 #include "core/FileRef.h"
-#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultEntry.h"
 #include "core/WorkspaceKeys.h"
+#include "core/spell/SpellCheckers.h"
 #include "models/ImageFileModel.h"
 #include "models/PdfFileModel.h"
 #include "ui/BaseWindow.h"
@@ -445,6 +445,13 @@ private:
         auto* edit_menu = bar->addMenu(tr("Edit"));
         edit_menu->addAction(action(ActionIds::DOCUMENT_UNDO));
         edit_menu->addAction(action(ActionIds::DOCUMENT_REDO));
+        edit_menu->addSeparator();
+        edit_menu->addAction(action(ActionIds::TEXT_CUT));
+        edit_menu->addAction(action(ActionIds::TEXT_COPY));
+        edit_menu->addAction(action(ActionIds::TEXT_PASTE));
+        edit_menu->addAction(action(ActionIds::TEXT_DELETE));
+        edit_menu->addSeparator();
+        edit_menu->addAction(action(ActionIds::TEXT_SELECT_ALL));
         edit_menu->addSeparator();
         edit_menu->addAction(action(ActionIds::VIEW_FIND));
         edit_menu->addAction(action(ActionIds::VIEW_REPLACE));

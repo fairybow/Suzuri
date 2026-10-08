@@ -13,12 +13,16 @@
 #pragma once
 
 #include <QAction>
+#include <QApplication>
+#include <QChar>
 #include <QEvent>
 #include <QHash>
 #include <QKeySequence>
+#include <QLineEdit>
 #include <QList>
 #include <QMainWindow>
 #include <QMoveEvent>
+#include <QPlainTextEdit>
 #include <QResizeEvent>
 #include <QStatusBar>
 #include <QString>
@@ -340,6 +344,71 @@ private:
             }
         });
 
+        // Cut, copy, paste, delete, and select all act on the text that has
+        // keyboard focus (applyToFocusedText_), and on nothing when no text
+        // does. Their keys are not bound here: every text widget already
+        // handles them itself, and a window binding would only ever fire with
+        // something else focused, taking Del from the file tree. So each shows
+        // its key as a hint (hintedText_) and binds none. Always enabled, like
+        // undo. Delete removes the selection only
+        auto* cut = registerAction(
+            ActionIds::TEXT_CUT,
+            hintedText_(tr("Cut"), QKeySequence::Cut),
+            QKeySequence{});
+        connect(cut, &QAction::triggered, this, [] {
+            applyToFocusedText_(
+                [](QLineEdit* line) { line->cut(); },
+                [](QPlainTextEdit* text) { text->cut(); });
+        });
+
+        auto* copy = registerAction(
+            ActionIds::TEXT_COPY,
+            hintedText_(tr("Copy"), QKeySequence::Copy),
+            QKeySequence{});
+        connect(copy, &QAction::triggered, this, [] {
+            applyToFocusedText_(
+                [](QLineEdit* line) { line->copy(); },
+                [](QPlainTextEdit* text) { text->copy(); });
+        });
+
+        auto* paste = registerAction(
+            ActionIds::TEXT_PASTE,
+            hintedText_(tr("Paste"), QKeySequence::Paste),
+            QKeySequence{});
+        connect(paste, &QAction::triggered, this, [] {
+            applyToFocusedText_(
+                [](QLineEdit* line) { line->paste(); },
+                [](QPlainTextEdit* text) { text->paste(); });
+        });
+
+        auto* remove = registerAction(
+            ActionIds::TEXT_DELETE,
+            hintedText_(tr("Delete"), QKeySequence::Delete),
+            QKeySequence{});
+        connect(remove, &QAction::triggered, this, [] {
+            applyToFocusedText_(
+                [](QLineEdit* line) {
+                    if (line->hasSelectedText() && !line->isReadOnly()) {
+                        line->del();
+                    }
+                },
+                [](QPlainTextEdit* text) {
+                    if (!text->isReadOnly()) {
+                        text->textCursor().removeSelectedText();
+                    }
+                });
+        });
+
+        auto* select_all = registerAction(
+            ActionIds::TEXT_SELECT_ALL,
+            hintedText_(tr("Select All"), QKeySequence::SelectAll),
+            QKeySequence{});
+        connect(select_all, &QAction::triggered, this, [] {
+            applyToFocusedText_(
+                [](QLineEdit* line) { line->selectAll(); },
+                [](QPlainTextEdit* text) { text->selectAll(); });
+        });
+
         // View zoom dispatches to the active VIEW, not its model: zoom is
         // per-view presentation, unlike undo/redo which route through the
         // shared prime. Same inert shape as undo — a view that can't zoom
@@ -419,6 +488,33 @@ private:
                 view->findPrevious();
             }
         });
+    }
+
+    // Call onLineEdit or onTextEdit on the widget with keyboard focus, as
+    // whichever it is, or neither when it is something else. A menu doesn't
+    // take the focus from the widget that had it, so from the menu bar this
+    // is the field or editor the user was in. QPlainTextEdit covers the text
+    // editor
+    template <typename OnLineEditT, typename OnTextEditT>
+    static void
+    applyToFocusedText_(OnLineEditT onLineEdit, OnTextEditT onTextEdit)
+    {
+        auto* focus = QApplication::focusWidget();
+
+        if (auto* line = qobject_cast<QLineEdit*>(focus)) {
+            onLineEdit(line);
+        } else if (auto* text = qobject_cast<QPlainTextEdit*>(focus)) {
+            onTextEdit(text);
+        }
+    }
+
+    // An action's text with a key after a tab, which a menu shows right-
+    // aligned as it would a bound shortcut's. Display only: it binds nothing
+    [[nodiscard]] static QString
+    hintedText_(const QString& text, QKeySequence::StandardKey key)
+    {
+        return text + QChar(QChar::Tabulation) +
+               QKeySequence(key).toString(QKeySequence::NativeText);
     }
 
     // Take App's actions into the registry. Both window types adopt the whole

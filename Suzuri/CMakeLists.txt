@@ -182,6 +182,12 @@ set(APP_SOURCES
 # --- Headers ---
 
 set(APP_HEADERS
+    src/core/spell/Misspelling.h
+    src/core/spell/SpellChecker.h
+    src/core/spell/SpellCheckers.h
+    src/core/spell/SpellWords.h
+    src/core/spell/WordList.h
+
     src/core/ActionIds.h
     src/core/AppActions.h
     src/core/AppConfig.h
@@ -194,11 +200,7 @@ set(APP_HEADERS
     src/core/FileTypes.h
     src/core/Io.h
     src/core/JsonIo.h
-    src/core/Misspelling.h
     src/core/Publication.h
-    src/core/SpellChecker.h
-    src/core/SpellCheckers.h
-    src/core/SpellWords.h
     src/core/TextCounts.h
     src/core/Vault.h
     src/core/VaultConfig.h
@@ -207,7 +209,6 @@ set(APP_HEADERS
     src/core/VaultTreeModel.h
     src/core/VaultTreeNode.h
     src/core/Version.h
-    src/core/WordList.h
     src/core/WorkspaceKeys.h
 
     src/models/AbstractFileModel.h

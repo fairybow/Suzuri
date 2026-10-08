@@ -20,6 +20,7 @@
 #include <QFontMetricsF>
 #include <QList>
 #include <QMargins>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
@@ -44,10 +45,10 @@
 
 #include <Coco/Debug.h>
 
-#include "core/Misspelling.h"
-#include "core/SpellChecker.h"
-#include "core/SpellWords.h"
-#include "core/WordList.h"
+#include "core/spell/Misspelling.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/SpellWords.h"
+#include "core/spell/WordList.h"
 #include "views/SelectionHandles.h"
 #include "views/TextSearch.h"
 #include "views/ViewConstants.h"
@@ -300,6 +301,22 @@ public:
     }
 
 protected:
+    // What a copy, a cut, or a drag of the selection carries: the selected
+    // text exactly as stored, as plain text only, with paragraph breaks as
+    // '\n' as in a saved file. Qt's own rewrites a no-break space as a space
+    // and U+2028 as a line break, and adds rich formats that carry the
+    // editor's font into whatever the text is pasted into
+    QMimeData* createMimeDataFromSelection() const override
+    {
+        auto text = textCursor().selectedText();
+        text.replace(QChar::ParagraphSeparator, QChar(u'\n'));
+
+        auto* data = new QMimeData;
+        data->setText(text);
+
+        return data;
+    }
+
     // The base applies a new font to the document; the gutter's width and the
     // tab width are measured in that font, so they follow. The line
     // highlight's brush is read from the palette when it is built, so a new
@@ -362,9 +379,12 @@ protected:
 
     // A double-click on a whitespace run selects it; anything else is Qt's
     // (word selection). The base never sees a click handled here, so it
-    // doesn't start its own word-by-word drag or count toward a triple-click
+    // doesn't start its own word-by-word drag or count toward a triple-click.
+    // Either way, the selection handles wait for the release
     void mouseDoubleClickEvent(QMouseEvent* event) override
     {
+        selectionHandles_.mouseDoubleClick(event);
+
         if (doubleClickWhitespace_ && event->button() == Qt::LeftButton &&
             selectWhitespaceRunAt_(event->position().toPoint())) {
             event->accept();

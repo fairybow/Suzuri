@@ -112,6 +112,8 @@ Ctrl+O, or "Go to file" on a new tab. A search field over every file in the vaul
 Plain text. Suzuri does not render Markdown or Fountain; those files are edited as the text they are.
 
 - Undo and redo
+- Cut, copy, paste, delete, and select all, from the keyboard, the Edit menu, or the right-click menu. In the Edit menu they act on whatever text has the keyboard focus, so they work in the find field too
+- Copying takes the text exactly as it is, as plain text: no-break spaces and other special characters come along unchanged, and nothing of the editor's font goes with it
 - Line numbers (off by default)
 - Line wrapping (on by default)
 - Left/right margin, as a percentage of the editor's width
@@ -119,7 +121,7 @@ Plain text. Suzuri does not render Markdown or Fountain; those files are edited 
 - Center on scroll: keeps the cursor mid-view and lets the text scroll past its end
 - Current line highlight
 - Double-click a run of spaces or tabs to select the whole run
-- Selection handles: a draggable handle under each end of a selection
+- Selection handles: a draggable handle under each end of a selection, for adjusting it. They appear once the selection is made: when the mouse button is let go
 - Font family, size, bold, and italic for the text. Courier Prime, Literata (the default), mononoki, and OpenDyslexic are bundled
 
 ## Find and replace
@@ -209,6 +211,8 @@ The list of known vaults is kept outside any vault, in Suzuri's application data
 | Go to file | Ctrl+O |
 | Settings | Ctrl+, |
 | Undo / Redo | Ctrl+Z / Ctrl+Y |
+| Cut / Copy / Paste | Ctrl+X / Ctrl+C / Ctrl+V |
+| Select all | Ctrl+A |
 | Find | Ctrl+F |
 | Find and replace | Ctrl+H |
 | Next / previous match | F3 / Shift+F3 |
@@ -229,6 +233,7 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - **Bold and italic font settings**, since there is no Markdown styling to carry emphasis
 - **A margin setting** in place of "Readable line length", and a switch to turn wrapping off
 - **Find has Match case and Whole word.** Obsidian's search in a file has neither. Suzuri's highlights also stay while you edit, until the bar is closed
+- **Delete and Select All in the right-click menu.** Obsidian's editor menu has only Cut, Copy, and Paste
 - **One spelling language per vault.** Obsidian can check several at once
 - **TIFF images** are supported. SVG and AVIF are not
 - **Images zoom**, like PDFs

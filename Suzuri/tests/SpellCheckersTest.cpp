@@ -23,16 +23,16 @@
 
 #include <Coco/Path.h>
 
-#include "core/SpellChecker.h"
-#include "core/SpellCheckers.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/SpellCheckers.h"
 
 using namespace Qt::StringLiterals;
 using Suzuri::SpellCheckers;
 
 // Which dictionaries a folder offers, and the checkers made from them
-// (core/SpellCheckers.h). The first tests write small dictionaries of their
-// own. The last ones install the dictionary that ships with Suzuri, which is
-// compiled into this test as it is into the app, and check it against a few
+// (core/spell/SpellCheckers.h). The first tests write small dictionaries of
+// their own. The last ones install the dictionary that ships with Suzuri, which
+// is compiled into this test as it is into the app, and check it against a few
 // English words.
 //
 // Qt Test runs every private slot as a test

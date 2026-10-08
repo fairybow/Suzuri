@@ -38,7 +38,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [x] `LogView` opens on every launch, for testing. Put it behind its command-line flag
 - [x] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
 - [ ] Test the OS logout save path (`App::onCommitDataRequest_`)
-- [ ] Need the remaining Edit menu and text editor context menu options (cut, copy, past, select all, delete)
+- [x] Need the remaining Edit menu and text editor context menu options (cut, copy, paste, select all, delete)
 - [ ] A licenses dialog crediting what Suzuri bundles: Hunspell, the en_US dictionary (`resources/dictionaries/README_en_US.txt` carries its terms), the fonts, and Lucide
 
 ## Code

@@ -35,10 +35,10 @@
 #include "core/CMakeMacroGuard.h"
 #include "core/Clargs.h"
 #include "core/Publication.h"
-#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultEntry.h"
 #include "core/Version.h"
+#include "core/spell/SpellCheckers.h"
 #include "ui/ManageVaults.h"
 #include "ui/VaultWindow.h"
 

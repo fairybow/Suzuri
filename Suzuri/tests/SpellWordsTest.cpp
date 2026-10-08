@@ -17,14 +17,14 @@
 #include <QStringList>
 #include <QTest>
 
-#include "core/SpellWords.h"
+#include "core/spell/SpellWords.h"
 
 using namespace Qt::StringLiterals;
 
 namespace SpellWords = Suzuri::SpellWords;
 
 // Which stretches of a line are words to check the spelling of
-// (core/SpellWords.h).
+// (core/spell/SpellWords.h).
 //
 // Qt Test runs every private slot as a test. A slot named <test>_data fills a
 // table, and <test> then runs once per row, reported under the row's name.

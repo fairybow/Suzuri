@@ -20,9 +20,9 @@
 
 #include <Coco/Debug.h>
 
-#include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
-#include "core/WordList.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/WordList.h"
 #include "models/AbstractFileModel.h"
 
 namespace Suzuri {

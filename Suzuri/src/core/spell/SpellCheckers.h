@@ -21,7 +21,7 @@
 #include <Coco/Debug.h>
 #include <Coco/Path.h>
 
-#include "core/SpellChecker.h"
+#include "core/spell/SpellChecker.h"
 
 namespace Suzuri {
 
