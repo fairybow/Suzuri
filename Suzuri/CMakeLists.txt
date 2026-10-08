@@ -206,6 +206,7 @@ set(APP_HEADERS
     src/core/VaultTreeModel.h
     src/core/VaultTreeNode.h
     src/core/Version.h
+    src/core/WordList.h
     src/core/WorkspaceKeys.h
 
     src/models/AbstractFileModel.h

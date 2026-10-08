@@ -33,6 +33,7 @@
 #include "core/VaultConfig.h"
 #include "core/VaultDotDir.h"
 #include "core/VaultTreeModel.h"
+#include "core/WordList.h"
 #include "models/AbstractFileModel.h"
 #include "models/ImageFileModel.h"
 #include "models/PdfFileModel.h"
@@ -586,12 +587,72 @@ public:
         }
     }
 
+    // --- Spelling ------------------------------------------------------------
+
+    // The vault's own dictionary: words to take as correctly spelled in this
+    // vault, kept in .suzuri/dictionary.txt and committed with the vault. Read
+    // at construction; a change made to the file by hand shows the next time
+    // the vault opens, or at the next addToDictionary
+    [[nodiscard]] const WordList& dictionary() const noexcept
+    {
+        return dictionary_;
+    }
+
+    // Words to take as correctly spelled until the vault closes. Never saved
+    [[nodiscard]] const WordList& ignoredWords() const noexcept
+    {
+        return ignoredWords_;
+    }
+
+    // Add a word to the dictionary and its file. The file is read again first
+    // and becomes the dictionary with the word added, so a word added or
+    // removed by hand since the vault opened is kept as the file has it. A file
+    // that is there but can't be read is not written over: the word is added
+    // for this session only. Announces wordsChanged
+    void addToDictionary(const QString& word)
+    {
+        auto path = dictionaryPath_();
+        auto on_disk = WordList::read(path);
+
+        if (!on_disk) {
+            WARN("Couldn't read {}; adding the word for now only", path);
+
+            if (dictionary_.insert(word)) {
+                emit wordsChanged();
+            }
+
+            return;
+        }
+
+        if (on_disk->insert(word) && ensureVaultDotDir(root_)) {
+            on_disk->write(path);
+        }
+
+        if (*on_disk != dictionary_) {
+            dictionary_ = *on_disk;
+            emit wordsChanged();
+        }
+    }
+
+    void ignoreWord(const QString& word)
+    {
+        if (ignoredWords_.insert(word)) {
+            emit wordsChanged();
+        }
+    }
+
 signals:
     // The config changed in memory. Every view this vault's windows host
     // re-applies from config() — VaultWindow::makeView_ connects each one — and
     // so does each window's status bar (BaseWindow::applyConfig). Fires before
     // the (debounced) save, so the change shows at once
     void configChanged();
+
+    // The dictionary or the ignored words changed. Each text view this vault's
+    // windows host takes the words again — VaultWindow::makeView_ connects
+    // each one — and so does every text view of every vault when the changed
+    // vault is the Common Vault
+    void wordsChanged();
 
 private:
     Coco::Path root_;
@@ -604,6 +665,11 @@ private:
     Coco::Time::Debouncer* configSaveTimer_ =
         Coco::Time::newDebouncer(this, &Vault::saveConfig_);
     int configSaveMs_ = 500;
+
+    static inline const QString DICTIONARY_FILE_NAME_ = u"dictionary.txt"_s;
+
+    WordList dictionary_{};
+    WordList ignoredWords_{};
 
     // Lists and watches the folders the tree views have opened. A second
     // watcher beside watcher_ below, by design: that one tracks the files we
@@ -675,6 +741,7 @@ private:
     {
         ensureVaultDotDir(root_);
         config_.load(root_);
+        dictionary_ = WordList::read(dictionaryPath_()).value_or(WordList{});
 
         // The watcher covers only files we hold buffers for; the tree's folders
         // are treeModel_'s. fileChanged drives external reload and deletion —
@@ -684,6 +751,11 @@ private:
             &QFileSystemWatcher::fileChanged,
             this,
             &Vault::onWatchedFileChanged_);
+    }
+
+    [[nodiscard]] Coco::Path dictionaryPath_() const
+    {
+        return vaultDotDir(root_) / DICTIONARY_FILE_NAME_;
     }
 
     // "Untitled.txt", then "Untitled 1.txt", ... — the first not already

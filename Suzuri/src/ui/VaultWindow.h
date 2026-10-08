@@ -552,7 +552,21 @@ private:
         AbstractFileView* view = nullptr;
 
         if (auto* text = qobject_cast<TextFileModel*>(model)) {
-            view = new TextFileView(text);
+            auto* text_view = new TextFileView(text);
+
+            // Words go to this window's vault, whichever vault the file is in
+            connect(
+                text_view,
+                &TextFileView::addToDictionaryRequested,
+                vault_,
+                &Vault::addToDictionary);
+            connect(
+                text_view,
+                &TextFileView::ignoreWordRequested,
+                vault_,
+                &Vault::ignoreWord);
+
+            view = text_view;
         } else if (auto* pdf = qobject_cast<PdfFileModel*>(model)) {
             view = new PdfFileView(pdf);
         } else if (auto* image = qobject_cast<ImageFileModel*>(model)) {
@@ -585,6 +599,27 @@ private:
 
         apply();
         connect(vault, &Vault::configChanged, view, apply);
+
+        // The words to take as correct: this window's vault's dictionary and
+        // ignored words, and the Common Vault's dictionary, which applies in
+        // every vault. Taken again when either vault's words change
+        auto apply_words = [view, vault, common = commonVault_] {
+            auto words = vault->dictionary();
+            words.unite(vault->ignoredWords());
+
+            if (common != vault) {
+                words.unite(common->dictionary());
+            }
+
+            view->setAcceptedWords(words);
+        };
+
+        apply_words();
+        connect(vault, &Vault::wordsChanged, view, apply_words);
+
+        if (commonVault_ != vault) {
+            connect(commonVault_, &Vault::wordsChanged, view, apply_words);
+        }
 
         markIfGuest_(view, fileRef);
         return view;

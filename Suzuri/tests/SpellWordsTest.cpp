@@ -63,9 +63,10 @@ private slots:
         QTest::newRow("one word") << u"hello"_s << QStringList{ u"hello"_s };
         QTest::newRow("a sentence")
             << u"In a castle of Westphalia, lived a youth."_s
-            << QStringList{ u"In"_s,     u"a"_s,          u"castle"_s,
-                            u"of"_s,     u"Westphalia"_s, u"lived"_s,
-                            u"a"_s,      u"youth"_s };
+            << QStringList{
+                   u"In"_s,         u"a"_s,     u"castle"_s, u"of"_s,
+                   u"Westphalia"_s, u"lived"_s, u"a"_s,      u"youth"_s
+               };
         QTest::newRow("tabs and several spaces")
             << u"one\t two   three"_s
             << QStringList{ u"one"_s, u"two"_s, u"three"_s };
@@ -75,10 +76,9 @@ private slots:
         QTest::newRow("a typographic apostrophe inside a word")
             << (u"don"_s + ch_(0x2019) + u"t stop"_s)
             << QStringList{ u"don"_s + ch_(0x2019) + u"t"_s, u"stop"_s };
-        QTest::newRow("a possessive") << u"the Baron's castle"_s
-                                      << QStringList{ u"the"_s,
-                                                      u"Baron's"_s,
-                                                      u"castle"_s };
+        QTest::newRow("a possessive")
+            << u"the Baron's castle"_s
+            << QStringList{ u"the"_s, u"Baron's"_s, u"castle"_s };
         QTest::newRow("quotation marks around a word")
             << u"he said 'this' twice"_s
             << QStringList{ u"he"_s, u"said"_s, u"this"_s, u"twice"_s };
@@ -95,9 +95,8 @@ private slots:
             << u"word--word"_s << QStringList{ u"word"_s, u"word"_s };
         QTest::newRow("a hyphen at either end")
             << u"-well known-"_s << QStringList{ u"well"_s, u"known"_s };
-        QTest::newRow("an em dash")
-            << (u"word"_s + ch_(0x2014) + u"word"_s)
-            << QStringList{ u"word"_s, u"word"_s };
+        QTest::newRow("an em dash") << (u"word"_s + ch_(0x2014) + u"word"_s)
+                                    << QStringList{ u"word"_s, u"word"_s };
 
         QTest::newRow("a period between letters")
             << u"e.g. this"_s << QStringList{ u"e"_s, u"g"_s, u"this"_s };

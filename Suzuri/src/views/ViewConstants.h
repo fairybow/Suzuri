@@ -72,6 +72,9 @@ inline constexpr qreal MISSPELLING_AMPLITUDE = 1.0;
 inline constexpr qreal MISSPELLING_HALF_PERIOD = 2.0;
 inline constexpr qreal MISSPELLING_GAP = 2.0;
 
+// How many suggestions the editor's context menu offers for a misspelled word
+inline constexpr int SPELLING_SUGGESTIONS_MAX = 5;
+
 // The find bar across the top of a text view (FindBar). MARGIN is the space
 // around its rows of controls and SPACING the gap between them, and between
 // the rows. The search and replacement fields are TERM_WIDTH wide, and narrow

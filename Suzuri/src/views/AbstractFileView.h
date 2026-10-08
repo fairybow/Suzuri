@@ -22,6 +22,7 @@
 
 #include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
+#include "core/WordList.h"
 #include "models/AbstractFileModel.h"
 
 namespace Suzuri {
@@ -114,6 +115,11 @@ public:
     // comes from the same config. The view borrows it. No-op on the base: a
     // view with no text to check ignores it
     virtual void setSpellChecker(SpellChecker*) {}
+
+    // Words to take as correctly spelled whatever the dictionary says: the
+    // vault's own, and those ignored for now. Set by the same wiring. No-op
+    // on the base, like setSpellChecker
+    virtual void setAcceptedWords(const WordList&) {}
 
 protected:
     // The derived ctor calls this once with its content widget. The base owns

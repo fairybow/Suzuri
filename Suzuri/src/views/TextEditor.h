@@ -46,6 +46,7 @@
 
 #include "core/SpellChecker.h"
 #include "core/SpellWords.h"
+#include "core/WordList.h"
 #include "views/SelectionHandles.h"
 #include "views/TextSearch.h"
 #include "views/ViewConstants.h"
@@ -124,9 +125,10 @@ private:
 // is the one under the mouse, not the one after the nearest cursor position.
 //
 // Spelling: with a SpellChecker set, each misspelled word in view gets a wavy
-// underline (paintMisspellings_). Nothing is stored about the text: the words
-// in view are found and looked up at each paint, and the checker remembers
-// its answers.
+// underline (paintMisspellings_). A word is misspelled when the accepted words
+// (the vault's own, set by the view's host) don't have it and the checker
+// doesn't take it. Nothing is stored about the text: the words in view are
+// found and looked up at each paint, and the checker remembers its answers.
 //
 // Selection handles (views/SelectionHandles.h): two draggable teardrops under
 // the ends of a selection. The editor's part is to paint them after the text
@@ -227,6 +229,51 @@ public:
 
         spellChecker_ = borrowedSpellChecker;
         viewport()->update();
+    }
+
+    [[nodiscard]] SpellChecker* spellChecker() const noexcept
+    {
+        return spellChecker_;
+    }
+
+    // Words to take as correctly spelled whatever the checker says
+    void setAcceptedWords(const WordList& words)
+    {
+        acceptedWords_ = words;
+
+        if (spellChecker_) {
+            viewport()->update();
+        }
+    }
+
+    // False whenever no checker is set
+    [[nodiscard]] bool isMisspelled(const QString& word) const
+    {
+        return spellChecker_ && !acceptedWords_.contains(word) &&
+               !spellChecker_->isCorrect(word);
+    }
+
+    // A cursor selecting the word (SpellWords::find) at a viewport position,
+    // or one with no selection when there is no word there. The position is
+    // in the word when it is between two of its characters or at either end
+    [[nodiscard]] QTextCursor wordAt(const QPoint& viewportPosition) const
+    {
+        auto cursor = cursorForPosition(viewportPosition);
+        auto block = cursor.block();
+        auto in_block = cursor.position() - block.position();
+
+        for (const auto& word : SpellWords::find(block.text())) {
+            if (in_block >= word.start &&
+                in_block <= word.start + word.length) {
+                cursor.setPosition(block.position() + word.start);
+                cursor.setPosition(
+                    block.position() + word.start + word.length,
+                    QTextCursor::KeepAnchor);
+                break;
+            }
+        }
+
+        return cursor;
     }
 
     [[nodiscard]] bool doubleClickWhitespace() const noexcept
@@ -353,6 +400,7 @@ private:
     bool lineHighlight_ = false;
     QList<TextSearch::Match> searchMatches_{};
     SpellChecker* spellChecker_ = nullptr;
+    WordList acceptedWords_{};
     bool doubleClickWhitespace_ = false;
     SelectionHandles selectionHandles_{ this };
 
@@ -604,8 +652,7 @@ private:
                 auto end = word.start + word.length;
 
                 if (end == caret_in_block ||
-                    spellChecker_->isCorrect(
-                        text.mid(word.start, word.length))) {
+                    !isMisspelled(text.mid(word.start, word.length))) {
                     continue;
                 }
 
