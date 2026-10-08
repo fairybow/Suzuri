@@ -31,6 +31,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [x] `LogView` opens on every launch, for testing. Put it behind its command-line flag
 - [x] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
 - [ ] Test the OS logout save path (`App::onCommitDataRequest_`)
+- [ ] Need the remaining Edit menu and text editor context menu options (cut, copy, past, select all, delete)
 
 ## Code
 
