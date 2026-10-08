@@ -53,6 +53,10 @@ GEN_DIR_METHOD_(defaultCommonVault, defaultDocs() / "Common Vault")
 GEN_DIR_METHOD_(appData, Coco::Path::GenericData(PUB_APP_NAME_STRING))
 GEN_DIR_METHOD_(logs, appData() / "logs")
 
+// Spelling dictionaries (core/SpellCheckers.h): the bundled ones are copied
+// here, and any others placed here are found too
+GEN_DIR_METHOD_(dictionaries, appData() / "dictionaries")
+
 #undef GEN_DIR_METHOD_
 
 } // namespace Suzuri::AppDirs

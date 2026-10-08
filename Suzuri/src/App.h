@@ -35,6 +35,7 @@
 #include "core/CMakeMacroGuard.h"
 #include "core/Clargs.h"
 #include "core/Publication.h"
+#include "core/SpellCheckers.h"
 #include "core/Vault.h"
 #include "core/VaultEntry.h"
 #include "core/Version.h"
@@ -73,6 +74,10 @@ public:
         // bundled family (the default text font, Literata) as it's made, and
         // after logging so a font that fails to load is reported
         BundledFonts::registerFonts();
+
+        // Before any window too: a text view asks for its vault's dictionary
+        // as it's made
+        SpellCheckers::installBundled(AppDirs::dictionaries());
 
         // suzuri.json is machine-local; a missing file (first run) leaves every
         // value at its AppDirs default. Load before the common vault so its
@@ -180,6 +185,10 @@ private:
     // by, and handed to each window at construction. Parented to App, so they
     // outlive every window
     AppActions appActions_{};
+
+    // Every spelling dictionary in use, loaded once and shared by every
+    // window. Windows borrow it; App outlives them all
+    SpellCheckers spellCheckers_{ AppDirs::dictionaries() };
 
     static void raiseWindow_(QWidget* window)
     {
@@ -508,7 +517,8 @@ private:
             vault,
             commonVault_,
             [this] { return vaultEntries(); },
-            appActions_);
+            appActions_,
+            &spellCheckers_);
 
         openVaults_.insert(vaultRoot, { vault, window });
 

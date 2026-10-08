@@ -20,6 +20,7 @@
 
 #include <Coco/Debug.h>
 
+#include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
 #include "models/AbstractFileModel.h"
 
@@ -107,6 +108,12 @@ public:
     // on the base, like the zoom virtuals: a view with nothing to apply (PDF,
     // image) inherits it and ignores the config
     virtual void applyConfig(const VaultConfig&) {}
+
+    // The dictionary to check spelling against, or nullptr for no checking.
+    // Set alongside applyConfig, by the same wiring, since which one it is
+    // comes from the same config. The view borrows it. No-op on the base: a
+    // view with no text to check ignores it
+    virtual void setSpellChecker(SpellChecker*) {}
 
 protected:
     // The derived ctor calls this once with its content widget. The base owns

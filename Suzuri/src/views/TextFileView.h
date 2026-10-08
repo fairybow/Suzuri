@@ -38,6 +38,7 @@
 #include <Coco/Debug.h>
 #include <Coco/Time.h>
 
+#include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
 #include "core/WorkspaceKeys.h"
 #include "models/TextFileModel.h"
@@ -126,6 +127,11 @@ public:
         editor_->setLineHighlight(config.lineHighlight());
         editor_->setDoubleClickWhitespace(config.doubleClickWhitespace());
         editor_->setSelectionHandles(config.selectionHandles());
+    }
+
+    void setSpellChecker(SpellChecker* borrowedSpellChecker) override
+    {
+        editor_->setSpellChecker(borrowedSpellChecker);
     }
 
     // --- Search --------------------------------------------------------------

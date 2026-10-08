@@ -197,6 +197,7 @@ set(APP_HEADERS
     src/core/Publication.h
     src/core/SpellChecker.h
     src/core/SpellCheckers.h
+    src/core/SpellWords.h
     src/core/TextCounts.h
     src/core/Vault.h
     src/core/VaultConfig.h

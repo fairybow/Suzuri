@@ -23,6 +23,8 @@
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPen>
 #include <QPlainTextEdit>
 #include <QPoint>
 #include <QPointF>
@@ -42,6 +44,8 @@
 
 #include <Coco/Debug.h>
 
+#include "core/SpellChecker.h"
+#include "core/SpellWords.h"
 #include "views/SelectionHandles.h"
 #include "views/TextSearch.h"
 #include "views/ViewConstants.h"
@@ -118,6 +122,11 @@ private:
 // run (Qt's own double-click selects a word, and does nothing useful on
 // spaces). Only the clicked paragraph's text is read, and the character tested
 // is the one under the mouse, not the one after the nearest cursor position.
+//
+// Spelling: with a SpellChecker set, each misspelled word in view gets a wavy
+// underline (paintMisspellings_). Nothing is stored about the text: the words
+// in view are found and looked up at each paint, and the checker remembers
+// its answers.
 //
 // Selection handles (views/SelectionHandles.h): two draggable teardrops under
 // the ends of a selection. The editor's part is to paint them after the text
@@ -208,6 +217,18 @@ public:
         viewport()->update();
     }
 
+    // The dictionary misspellings are judged by, or nullptr to mark none.
+    // Borrowed
+    void setSpellChecker(SpellChecker* borrowedSpellChecker)
+    {
+        if (borrowedSpellChecker == spellChecker_) {
+            return;
+        }
+
+        spellChecker_ = borrowedSpellChecker;
+        viewport()->update();
+    }
+
     [[nodiscard]] bool doubleClickWhitespace() const noexcept
     {
         return doubleClickWhitespace_;
@@ -247,13 +268,15 @@ protected:
         }
     }
 
-    // The search tint and the selection handles are drawn over the text, so
+    // The search tint, the spelling underlines, and the selection handles are
+    // drawn over the text, so
     // after it. This is the viewport's paint event (QAbstractScrollArea hands
     // those here), and the base's painter is finished by the time it returns
     void paintEvent(QPaintEvent* event) override
     {
         QPlainTextEdit::paintEvent(event);
         paintSearchMatches_(event);
+        paintMisspellings_(event);
         selectionHandles_.paint();
     }
 
@@ -329,6 +352,7 @@ private:
 
     bool lineHighlight_ = false;
     QList<TextSearch::Match> searchMatches_{};
+    SpellChecker* spellChecker_ = nullptr;
     bool doubleClickWhitespace_ = false;
     SelectionHandles selectionHandles_{ this };
 
@@ -538,11 +562,107 @@ private:
         }
     }
 
-    // Off, there is nothing to move, and nothing is rebuilt
+    // Underline each misspelled word in view. Walks the visible blocks as
+    // paintSearchMatches_ does, and finds each one's words afresh
+    // (SpellWords::find); the checker has usually seen the word before and
+    // answers from its cache.
+    //
+    // The word the caret is at the end of is left alone: it is most likely
+    // still being typed, and half a word is nearly always a misspelling.
+    //
+    // A word is on one line unless it is wider than the view, and then each
+    // line's part of it is underlined
+    void paintMisspellings_(const QPaintEvent* event)
+    {
+        if (!spellChecker_) {
+            return;
+        }
+
+        QPainter painter(viewport());
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(MISSPELLING_COLOR, MISSPELLING_WIDTH));
+
+        auto caret = textCursor().position();
+        auto offset = contentOffset();
+
+        for (auto block = firstVisibleBlock(); block.isValid();
+             block = block.next()) {
+            auto geometry = blockBoundingGeometry(block).translated(offset);
+            if (geometry.top() > event->rect().bottom()) {
+                break;
+            }
+
+            if (!block.isVisible() || geometry.bottom() < event->rect().top()) {
+                continue;
+            }
+
+            auto text = block.text();
+            auto caret_in_block = caret - block.position();
+            const auto* layout = block.layout();
+
+            for (const auto& word : SpellWords::find(text)) {
+                auto end = word.start + word.length;
+
+                if (end == caret_in_block ||
+                    spellChecker_->isCorrect(
+                        text.mid(word.start, word.length))) {
+                    continue;
+                }
+
+                auto line = layout->lineForTextPosition(word.start);
+
+                while (line.isValid() && line.textStart() < end) {
+                    auto line_end = line.textStart() + line.textLength();
+                    auto left =
+                        line.cursorToX(qMax(word.start, line.textStart()));
+                    auto right = line.cursorToX(qMin(end, line_end));
+
+                    painter.drawPath(wave_(
+                        geometry.left() + left,
+                        geometry.left() + right,
+                        geometry.top() + line.y() + line.ascent() +
+                            MISSPELLING_GAP));
+
+                    line = layout->lineAt(line.lineNumber() + 1);
+                }
+            }
+        }
+    }
+
+    // A zigzag from left to right about the height y, starting on a rise.
+    // Antialiased at this size it reads as a wave
+    [[nodiscard]] static QPainterPath wave_(qreal left, qreal right, qreal y)
+    {
+        QPainterPath path(QPointF(left, y + MISSPELLING_AMPLITUDE));
+        auto rising = true;
+
+        for (auto x = left + MISSPELLING_HALF_PERIOD; x < right;
+             x += MISSPELLING_HALF_PERIOD) {
+            path.lineTo(
+                x,
+                rising ? y - MISSPELLING_AMPLITUDE : y + MISSPELLING_AMPLITUDE);
+            rising = !rising;
+        }
+
+        path.lineTo(
+            right,
+            rising ? y - MISSPELLING_AMPLITUDE : y + MISSPELLING_AMPLITUDE);
+
+        return path;
+    }
+
+    // The line highlight moves with the caret. So does the one word spared
+    // an underline (paintMisspellings_): Qt repaints only the caret's own
+    // rectangle on a move, which would leave the word the caret left unmarked
+    // and the one it arrived at marked
     void onCursorPositionChanged_()
     {
         if (lineHighlight_) {
             updateExtraSelections_();
+        }
+
+        if (spellChecker_) {
+            viewport()->update();
         }
     }
 
