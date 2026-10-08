@@ -43,11 +43,12 @@ Suzuri is early in development, and more features are planned. I expect to keep 
 - **A Common Vault** shared by every project, for templates, notes, and reference material
 - **A file tree and Go to File** (Ctrl+O), with drag-and-drop moves and delete-to-trash
 - **Find and replace** in a file, with match case and whole word
+- **Spellcheck** as you write, with suggestions and a dictionary of your own words for each vault. US English is bundled, and other Hunspell dictionaries can be added
 - **Changes made elsewhere are picked up.** A file edited in another program, by Git, or by a sync client reloads in place, as one undo step
 - **PDFs and images** open read-only beside your text
 - **A word counter**, bundled fonts for prose, and settings kept per vault
 
-Suzuri edits plain text. Markdown and Fountain files open as the text they are, with no rendering for now. There are no links, tags, or metadata, and spellcheck isn't built yet.
+Suzuri edits plain text. Markdown and Fountain files open as the text they are, with no rendering for now. There are no links, tags, or metadata.
 
 The full list is in [Features.md](Suzuri/docs/Features.md), and what's planned is in [Future.md](Suzuri/docs/Future.md).
 
@@ -65,7 +66,7 @@ You'll need:
 - A C++20 compiler: MSVC 2022, GCC 13, or Apple Clang
 - Qt 6.7 or later, with the Qt PDF and Qt Image Formats modules. Suzuri is developed on Qt 6.11
 
-Clone with submodules, since Suzuri's support library, [Coco](https://github.com/fairybow/Coco), is one:
+Clone with submodules, since [Coco](https://github.com/fairybow/Coco) (Suzuri's support library) and [Hunspell](https://github.com/hunspell/hunspell) are submodules:
 
 ```
 git clone --recurse-submodules https://github.com/fairybow/Suzuri

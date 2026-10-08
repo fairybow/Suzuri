@@ -13,6 +13,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] Opening the file that is already in the active, unpinned tab should do nothing
 - [ ] Minor: dragging a file quickly from near its row's bottom edge moves the selection band (grey, blue left edge) down to the next row, though that row isn't selected
 - [ ] The "Options" heading in the settings dialog can be hovered or selected and probably shouldn't be
+- [x] The text editor's context menu opened to the left of the pointer, by the width of the line-number gutter and the margin. Qt gives a scroll area's menu position in its viewport's coordinates, and it was mapped from the editor's
 - [x] A path with a `..` segment passed `Vault::contains`, so a rename or move could take an entry out of the vault, and `Vault::openModel` opened a `../` or absolute path from a hand-edited `workspace.json`. `Vault` now takes only plain paths (see "Identity" in [Architecture.md](Architecture.md))
 
 ## Rough edges
@@ -32,6 +33,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [x] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
 - [ ] Test the OS logout save path (`App::onCommitDataRequest_`)
 - [ ] Need the remaining Edit menu and text editor context menu options (cut, copy, past, select all, delete)
+- [ ] A licenses dialog crediting what Suzuri bundles: Hunspell, the en_US dictionary (`resources/dictionaries/README_en_US.txt` carries its terms), the fonts, and Lucide
 
 ## Code
 
@@ -54,7 +56,7 @@ What the tests in `Suzuri/tests/` don't reach.
 - [ ] A successful `Vault::moveToTrash`. It would put a file in the real system trash on every run
 - [ ] `Vault::recreateRoot`
 - [ ] A file that starts with two byte-order marks. On Qt 6.4 one is dropped on load, which the comment on the mark in `TextFileModel.h` says can't happen. Check it on the Qt in use
-- [ ] `AppConfig`, `JsonIo`, `WorkspaceFile`, and everything in `views/` (apart from `TextSearch`) and `ui/`. The find bar and the way `TextFileView` drives a search are among them. Considered for `TabPaneTree`'s save and restore and left out: a mistake there costs a layout, not text, and shows on the next launch
+- [ ] `AppConfig`, `JsonIo`, `WorkspaceFile`, and everything in `views/` (apart from `TextSearch`) and `ui/`. The find bar and the way `TextFileView` drives a search are among them, as are the misspelling underlines and the spelling items in the editor's context menu. Considered for `TabPaneTree`'s save and restore and left out: a mistake there costs a layout, not text, and shows on the next launch
 
 ## Audits
 
