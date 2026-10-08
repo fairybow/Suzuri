@@ -316,9 +316,9 @@ protected:
     }
 
     // The search tint, the spelling underlines, and the selection handles are
-    // drawn over the text, so
-    // after it. This is the viewport's paint event (QAbstractScrollArea hands
-    // those here), and the base's painter is finished by the time it returns
+    // drawn over the text, so after it. This is the viewport's paint event
+    // (QAbstractScrollArea hands those here), and the base's painter is
+    // finished by the time it returns
     void paintEvent(QPaintEvent* event) override
     {
         QPlainTextEdit::paintEvent(event);
