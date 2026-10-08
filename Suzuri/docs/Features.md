@@ -121,7 +121,7 @@ Plain text. Suzuri does not render Markdown or Fountain; those files are edited 
 - Center on scroll: keeps the cursor mid-view and lets the text scroll past its end
 - Current line highlight
 - Double-click a run of spaces or tabs to select the whole run
-- Selection handles: a draggable handle under each end of a selection
+- Selection handles: a draggable handle under each end of a selection, for adjusting it. They appear once the selection is made: when the mouse button is let go
 - Font family, size, bold, and italic for the text. Courier Prime, Literata (the default), mononoki, and OpenDyslexic are bundled
 
 ## Find and replace

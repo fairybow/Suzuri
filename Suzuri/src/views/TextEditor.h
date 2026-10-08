@@ -379,9 +379,12 @@ protected:
 
     // A double-click on a whitespace run selects it; anything else is Qt's
     // (word selection). The base never sees a click handled here, so it
-    // doesn't start its own word-by-word drag or count toward a triple-click
+    // doesn't start its own word-by-word drag or count toward a triple-click.
+    // Either way, the selection handles wait for the release
     void mouseDoubleClickEvent(QMouseEvent* event) override
     {
+        selectionHandles_.mouseDoubleClick(event);
+
         if (doubleClickWhitespace_ && event->button() == Qt::LeftButton &&
             selectWhitespaceRunAt_(event->position().toPoint())) {
             event->accept();

@@ -50,6 +50,13 @@ namespace Suzuri {
 // the text reflowing — repaints some of the viewport, so paint() always runs
 // to notice.
 //
+// The handles are for adjusting a selection already made, so they stay hidden
+// while one is being made with the mouse: from a left press (or double-click)
+// that isn't on a handle until its release. A release can go missing — focus
+// lost mid-drag, or a drag of the selected text, whose release Qt's drag
+// consumes — so a mouse move with the button up ends it too. A selection made
+// from the keyboard shows its handles as it grows.
+//
 // A plain class the editor owns by value, using only QPlainTextEdit's public
 // interface. Colors are palette roles read at each paint, so they follow
 // palette and color-group changes. Left-to-right text only
@@ -74,6 +81,7 @@ public:
 
         enabled_ = enabled;
         dragging_ = false;
+        selecting_ = false;
         setHovering_(false);
 
         auto* viewport = editor_->viewport();
@@ -89,16 +97,7 @@ public:
 
         auto start = anchor_(Handle_::Start);
         auto end = anchor_(Handle_::End);
-
-        QRegion bounds{};
-
-        if (start) {
-            bounds += bounds_(*start);
-        }
-
-        if (end) {
-            bounds += bounds_(*end);
-        }
+        auto bounds = bounds_(start, end);
 
         // Moved since the last paint: repaint where they were and where
         // they are. That paint finds them where this one left them, and
@@ -140,7 +139,10 @@ public:
     // not from its tip: the tip sits on the row's bottom edge, where one
     // pixel of downward movement is already the next row. From the middle,
     // the mouse has to travel half a row either way before the end changes
-    // rows
+    // rows.
+    //
+    // A press anywhere else starts a selection, and hides the handles until
+    // it is made
     bool mousePress(const QMouseEvent* event)
     {
         if (!enabled_ || event->button() != Qt::LeftButton) {
@@ -151,6 +153,7 @@ public:
         auto handle = hitTest_(position);
 
         if (handle == Handle_::None) {
+            setSelecting_(true);
             return false;
         }
 
@@ -171,7 +174,8 @@ public:
     // in the middle of the handle's row. Dragging past the fixed end simply
     // selects the other way.
     // Not dragging, only the hover cursor changes, and the move is left to
-    // the editor
+    // the editor. A move with the button up ends a selection whose release
+    // never arrived
     bool mouseMove(const QMouseEvent* event)
     {
         if (!enabled_) {
@@ -179,6 +183,10 @@ public:
         }
 
         if (!dragging_) {
+            if (!(event->buttons() & Qt::LeftButton)) {
+                setSelecting_(false);
+            }
+
             setHovering_(hitTest_(event->position()) != Handle_::None);
             return false;
         }
@@ -194,9 +202,16 @@ public:
         return true;
     }
 
+    // The end of a selection made with the mouse shows the handles. The
+    // release itself is the editor's
     bool mouseRelease(const QMouseEvent* event)
     {
-        if (!dragging_ || event->button() != Qt::LeftButton) {
+        if (event->button() != Qt::LeftButton) {
+            return false;
+        }
+
+        if (!dragging_) {
+            setSelecting_(false);
             return false;
         }
 
@@ -208,6 +223,16 @@ public:
             hovering_ ? Qt::OpenHandCursor : Qt::IBeamCursor);
 
         return true;
+    }
+
+    // A double-click selects a word, and its button may be held a while
+    // before the release, so it hides the handles as a press does. Never
+    // taken: the editor selects the word
+    void mouseDoubleClick(const QMouseEvent* event)
+    {
+        if (enabled_ && event->button() == Qt::LeftButton) {
+            setSelecting_(true);
+        }
     }
 
 private:
@@ -227,16 +252,20 @@ private:
 
     bool hovering_ = false;
     bool dragging_ = false;
+
+    // A selection is being made with the mouse (see class note)
+    bool selecting_ = false;
+
     QPointF dragOffset_{};
     int dragFixedPosition_ = 0;
 
     // The text cursor's rectangle at one end of the selection, in viewport
     // coordinates: as tall as that end's row. Nothing when the handles are
-    // off, when there is no selection, or when that row is scrolled out of
-    // view
+    // off or hidden while a selection is made, when there is no selection,
+    // or when that row is scrolled out of view
     [[nodiscard]] std::optional<QRect> caretRect_(Handle_ handle) const
     {
-        if (!enabled_ || handle == Handle_::None) {
+        if (!enabled_ || selecting_ || handle == Handle_::None) {
             return std::nullopt;
         }
 
@@ -292,6 +321,41 @@ private:
             SELECTION_HANDLE_STEM_HEIGHT + SELECTION_HANDLE_RADIUS * 2.0);
 
         return drawn.adjusted(-slack, -slack, slack, slack).toAlignedRect();
+    }
+
+    // What both handles cover, where each is drawn
+    [[nodiscard]] static QRegion bounds_(
+        const std::optional<QPointF>& start,
+        const std::optional<QPointF>& end)
+    {
+        QRegion bounds{};
+
+        if (start) {
+            bounds += bounds_(*start);
+        }
+
+        if (end) {
+            bounds += bounds_(*end);
+        }
+
+        return bounds;
+    }
+
+    // Hide or show the handles for a selection made with the mouse, and
+    // repaint where they were and where they now go. Neither need come with
+    // a repaint of its own: a release changes no text, and a press inside
+    // the selection (the start of a drag of it) changes nothing yet
+    void setSelecting_(bool selecting)
+    {
+        if (selecting == selecting_) {
+            return;
+        }
+
+        auto before = bounds_(anchor_(Handle_::Start), anchor_(Handle_::End));
+        selecting_ = selecting;
+        auto after = bounds_(anchor_(Handle_::Start), anchor_(Handle_::End));
+
+        editor_->viewport()->update(before + after);
     }
 
     // Which handle a viewport position is on: within HIT_RADIUS of a bulb's
