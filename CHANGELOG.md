@@ -102,6 +102,36 @@ git push origin v0.0.0-beta.0
 
 <a id="releases"></a>
 
+# 0.2.0-beta.0 (Spellcheck) - tag v0.2.0-beta.0
+
+## What's New?
+
+Suzuri now has spellcheck.
+
+- Misspelled words get a red wavy underline. The word you're typing isn't marked until you move on from it
+- **Right-click** a marked word for up to five suggestions. Choosing one replaces the word, and one undo puts it back. Suggestions keep your apostrophe style, straight or curly
+- **Add to dictionary** saves the word to the vault's own dictionary, `.suzuri/dictionary.txt`, which travels with the vault. Words added to the Common Vault's dictionary are accepted in every vault
+- **Ignore** accepts a word until the vault is closed
+- Added words are accepted in their possessive and hyphenated forms too: with "Pangloss" added, so are "Pangloss's" and "Pangloss-like" accepted
+- US English is included. For another language, put a Hunspell dictionary (the `.aff` and `.dic` files LibreOffice uses) in Suzuri's dictionaries folder. **Settings → Editor → Spelling** has a button that opens it
+- Checking can be turned off, and the language chosen, separately for each vault
+
+Each vault checks one language at a time right now.
+
+Also in this release:
+
+- **Fixed:** the text editor's right-click menu opened to the left of the pointer when line numbers or a margin were on
+
+## Known Issues
+
+- Web addresses and file paths are checked piece by piece, so parts like "github" and "com" are marked
+- Suggestions can take a moment to appear for a long or badly garbled word
+- Focus doesn't always land in the editor after dragging a tab or restoring a session
+- Pop-out windows can reopen behind their vault window
+- macOS and Linux builds are not well-tested
+
+---
+
 # 0.1.0-beta.0 (Find and Replace) - tag v0.1.0-beta.0
 
 ## What's New?
