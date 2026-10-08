@@ -94,9 +94,16 @@ endfunction()
 app_add_test(FileTypesTest)
 app_add_test(PrimeDocumentTest)
 app_add_test(SpellCheckerTest)
+app_add_test(SpellCheckersTest)
 app_add_test(TextCountsTest)
 app_add_test(TextFileModelTest)
 app_add_test(TextSearchTest)
 app_add_test(VaultTest)
 app_add_test(VaultTimedTest)
 app_add_test(VaultTreeModelTest)
+
+# The dictionary that ships with the app, compiled into the one test that
+# installs it
+target_sources(SpellCheckersTest PRIVATE
+    ${PROJECT_SOURCE_DIR}/resources/Dictionaries.qrc
+)

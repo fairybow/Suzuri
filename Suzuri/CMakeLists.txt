@@ -196,6 +196,7 @@ set(APP_HEADERS
     src/core/JsonIo.h
     src/core/Publication.h
     src/core/SpellChecker.h
+    src/core/SpellCheckers.h
     src/core/TextCounts.h
     src/core/Vault.h
     src/core/VaultConfig.h
@@ -279,6 +280,7 @@ set(APP_HEADERS
 # --- Resources ---
 
 set(APP_RESOURCES
+    resources/Dictionaries.qrc
     resources/Fonts.qrc
     resources/Icons.qrc
     resources/Lucide.qrc
