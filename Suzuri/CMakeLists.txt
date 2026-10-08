@@ -45,6 +45,44 @@ set(COCO_WITH_DIAGNOSTICS "AUTO")
 
 add_subdirectory(submodules/Coco/Coco)
 
+# --- Hunspell (submodule) ---
+
+# Hunspell has no CMake build of its own, so its library is compiled here from
+# its sources. HUNSPELL_STATIC stops its headers marking symbols for a DLL.
+# Its headers are SYSTEM so they raise no warnings in Suzuri's code, and its
+# own warnings are off: they aren't ours to fix. None of it is Qt code, so the
+# Qt code generators are off for it
+set(_hunspell_dir submodules/hunspell/src/hunspell)
+
+add_library(hunspell STATIC
+    ${_hunspell_dir}/affentry.cxx
+    ${_hunspell_dir}/affixmgr.cxx
+    ${_hunspell_dir}/csutil.cxx
+    ${_hunspell_dir}/filemgr.cxx
+    ${_hunspell_dir}/hashmgr.cxx
+    ${_hunspell_dir}/hunspell.cxx
+    ${_hunspell_dir}/hunspelltrace.cxx
+    ${_hunspell_dir}/hunzip.cxx
+    ${_hunspell_dir}/phonet.cxx
+    ${_hunspell_dir}/replist.cxx
+    ${_hunspell_dir}/suggestmgr.cxx
+)
+
+set_target_properties(hunspell PROPERTIES
+    AUTOMOC OFF
+    AUTOUIC OFF
+    AUTORCC OFF
+)
+
+target_include_directories(hunspell SYSTEM PUBLIC ${_hunspell_dir})
+target_compile_definitions(hunspell PUBLIC HUNSPELL_STATIC)
+
+if(MSVC)
+    target_compile_options(hunspell PRIVATE /w)
+else()
+    target_compile_options(hunspell PRIVATE -w)
+endif()
+
 # =============================================================================
 # Parsing
 # =============================================================================
@@ -157,6 +195,7 @@ set(APP_HEADERS
     src/core/Io.h
     src/core/JsonIo.h
     src/core/Publication.h
+    src/core/SpellChecker.h
     src/core/TextCounts.h
     src/core/Vault.h
     src/core/VaultConfig.h
@@ -312,6 +351,7 @@ target_compile_definitions(Suzuri PRIVATE
 
 target_link_libraries(Suzuri PRIVATE
     Coco::Coco
+    hunspell
     Qt6::Core
     Qt6::Gui
     Qt6::Network
