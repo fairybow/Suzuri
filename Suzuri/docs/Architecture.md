@@ -29,7 +29,8 @@ Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.c
 | Folder | Holds |
 |---|---|
 | `src/` | `Main.cpp`, `App`, and the log window |
-| `core/` | `Vault`, the vault tree model, configuration, file IO, file types, spellcheck, action ids |
+| `core/` | `Vault`, the vault tree model, configuration, file IO, file types, action ids |
+| `core/spell/` | Spellcheck: the dictionaries, the word rules, and the vault's word lists |
 | `models/` | One buffer class per file type, and the prime document |
 | `views/` | One view class per file type, and the parts only views use: the text editor with its selection handles, the find bar and the search functions behind it, and the zoom control with its state |
 | `ui/` | The windows and what they open directly: workspace persistence, Go to File, the vault picker, the status bar items |

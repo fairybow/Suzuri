@@ -52,11 +52,11 @@ This is a soft release. For a full feature list, see [Features.md](https://githu
 
 Uninstalling leaves these folders in place. The first and last hold only settings and are safe to remove. `Documents/Suzuri/` holds your writing: delete it only if you mean to.
 
-| Folder                 | Location                                                                                                               | Contents                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| App data               | `AppData/Local/Suzuri` (Windows), `~/Library/Application Support/Suzuri` (macOS), `~/.local/share/Suzuri` (Linux) | Known vaults, session, logs, spelling dictionaries |
-| Default vault location | `Documents/Suzuri/`                                                                                                    | Your vaults and the Common Vault |
-| Per-vault settings     | `.suzuri/` inside each vault                                                                                           | Settings, layout, and the vault's dictionary |
+| Folder | Location | Contents |
+|---|---|---|
+| App data | `AppData/Local/Suzuri` (Windows), `~/Library/Application Support/Suzuri` (macOS), `~/.local/share/Suzuri` (Linux) | Known vaults, session, logs, spelling dictionaries |
+| Default vault location | `Documents/Suzuri/` | Your vaults and the Common Vault |
+| Per-vault settings | `.suzuri/` inside each vault | Settings, layout, and the vault's dictionary |
 
 ## Platforms
 
@@ -101,6 +101,31 @@ git push origin v0.0.0-beta.0
 ---
 
 <a id="releases"></a>
+
+# 0.3.0-beta.0 (Edit Menu) - tag v0.3.0-beta.0
+
+## What's New?
+
+The rest of the usual editing commands are now in the menus.
+
+- **Cut, Copy, Paste, Delete, and Select All** are in the Edit menu (Ctrl+M shows the menu bar) and in the text editor's right-click menu
+- In the Edit menu they act on whatever text you're in, so they work in the find field as well as the editor
+- In the right-click menu, commands that can't apply are greyed out: Cut and Copy with nothing selected, Paste with nothing on the clipboard
+- **Copying keeps your text exactly as it is.** No-break spaces and other special characters used to be changed on the way to the clipboard. Copied text is now plain text only, so when you paste into Word or an email it takes on that document's formatting instead of bringing the editor's font with it
+
+Also in this release:
+
+- Selection handles now only appear (if enabled) once you've finished making a selection, when you let go of the mouse
+
+## Known Issues
+
+- Web addresses and file paths are spellchecked piece by piece, so parts like "github" and "com" are marked
+- Spelling suggestions can take a moment to appear for a long or badly garbled word
+- Focus doesn't always land in the editor after dragging a tab or restoring a session
+- Pop-out windows can reopen behind their vault window
+- macOS and Linux builds are not well-tested
+
+---
 
 # 0.2.0-beta.0 (Spellcheck) - tag v0.2.0-beta.0
 
