@@ -54,9 +54,9 @@ Uninstalling leaves these folders in place. The first and last hold only setting
 
 | Folder                 | Location                                                                                                               | Contents                         |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| App data               | `AppData/Local/Suzuri` (Windows), `~/Library/Application Support/Suzuri` (macOS), `~/.local/share/Suzuri` (Linux) | Known vaults, session, logs      |
+| App data               | `AppData/Local/Suzuri` (Windows), `~/Library/Application Support/Suzuri` (macOS), `~/.local/share/Suzuri` (Linux) | Known vaults, session, logs, spelling dictionaries |
 | Default vault location | `Documents/Suzuri/`                                                                                                    | Your vaults and the Common Vault |
-| Per-vault settings     | `.suzuri/` inside each vault                                                                                           | Settings and layout              |
+| Per-vault settings     | `.suzuri/` inside each vault                                                                                           | Settings, layout, and the vault's dictionary |
 
 ## Platforms
 
