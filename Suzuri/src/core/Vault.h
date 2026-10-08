@@ -33,7 +33,7 @@
 #include "core/VaultConfig.h"
 #include "core/VaultDotDir.h"
 #include "core/VaultTreeModel.h"
-#include "core/WordList.h"
+#include "core/spell/WordList.h"
 #include "models/AbstractFileModel.h"
 #include "models/ImageFileModel.h"
 #include "models/PdfFileModel.h"

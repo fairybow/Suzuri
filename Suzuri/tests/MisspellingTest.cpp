@@ -22,9 +22,9 @@
 
 #include <Coco/Path.h>
 
-#include "core/Misspelling.h"
-#include "core/SpellChecker.h"
-#include "core/WordList.h"
+#include "core/spell/Misspelling.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/WordList.h"
 
 using namespace Qt::StringLiterals;
 
@@ -34,8 +34,9 @@ using Suzuri::WordList;
 namespace Misspelling = Suzuri::Misspelling;
 
 // Whether a word is misspelled, given a dictionary and a list of accepted
-// words (core/Misspelling.h). Each test writes a dictionary of a few words to
-// a temporary folder, so nothing here depends on a real one being installed.
+// words (core/spell/Misspelling.h). Each test writes a dictionary of a few
+// words to a temporary folder, so nothing here depends on a real one being
+// installed.
 //
 // Qt Test runs every private slot as a test. A slot named <test>_data fills a
 // table, and <test> then runs once per row, reported under the row's name.

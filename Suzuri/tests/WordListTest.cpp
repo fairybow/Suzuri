@@ -22,14 +22,14 @@
 
 #include <Coco/Path.h>
 
-#include "core/WordList.h"
+#include "core/spell/WordList.h"
 
 using namespace Qt::StringLiterals;
 
 using Suzuri::WordList;
 
-// A set of words to take as correctly spelled (core/WordList.h): which forms
-// of a stored word it accepts, and its file.
+// A set of words to take as correctly spelled (core/spell/WordList.h): which
+// forms of a stored word it accepts, and its file.
 //
 // Qt Test runs every private slot as a test. A slot named <test>_data fills a
 // table, and <test> then runs once per row, reported under the row's name.

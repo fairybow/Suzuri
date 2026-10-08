@@ -38,11 +38,11 @@
 #include <Coco/Debug.h>
 #include <Coco/Time.h>
 
-#include "core/Misspelling.h"
-#include "core/SpellChecker.h"
 #include "core/VaultConfig.h"
-#include "core/WordList.h"
 #include "core/WorkspaceKeys.h"
+#include "core/spell/Misspelling.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/WordList.h"
 #include "models/TextFileModel.h"
 #include "views/AbstractFileView.h"
 #include "views/FindBar.h"

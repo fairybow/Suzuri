@@ -17,8 +17,8 @@
 #include <QStringView>
 #include <QtTypes>
 
-#include "core/SpellChecker.h"
-#include "core/WordList.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/WordList.h"
 
 // Whether a word is misspelled, given a dictionary and the words to take as
 // correct besides. Free functions in core, so the rule is in one place, for

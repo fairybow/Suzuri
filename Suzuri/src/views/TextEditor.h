@@ -45,10 +45,10 @@
 
 #include <Coco/Debug.h>
 
-#include "core/Misspelling.h"
-#include "core/SpellChecker.h"
-#include "core/SpellWords.h"
-#include "core/WordList.h"
+#include "core/spell/Misspelling.h"
+#include "core/spell/SpellChecker.h"
+#include "core/spell/SpellWords.h"
+#include "core/spell/WordList.h"
 #include "views/SelectionHandles.h"
 #include "views/TextSearch.h"
 #include "views/ViewConstants.h"

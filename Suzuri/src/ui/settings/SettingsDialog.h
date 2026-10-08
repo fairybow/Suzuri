@@ -31,8 +31,8 @@
 
 #include <Coco/Debug.h>
 
-#include "core/SpellCheckers.h"
 #include "core/Vault.h"
+#include "core/spell/SpellCheckers.h"
 #include "ui/UiConstants.h"
 #include "ui/settings/SettingsAppearancePage.h"
 #include "ui/settings/SettingsEditorPage.h"

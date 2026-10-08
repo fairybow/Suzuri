@@ -25,14 +25,14 @@
 
 #include <Coco/Path.h>
 
-#include "core/SpellChecker.h"
+#include "core/spell/SpellChecker.h"
 
 using namespace Qt::StringLiterals;
 using Suzuri::SpellChecker;
 
 // What the spelling checker takes for a correctly spelled word
-// (core/SpellChecker.h). Each test writes a dictionary of a few words to a
-// temporary folder, so nothing here depends on a real one being installed.
+// (core/spell/SpellChecker.h). Each test writes a dictionary of a few words to
+// a temporary folder, so nothing here depends on a real one being installed.
 //
 // Text outside ASCII is built from code point numbers, or written as the
 // bytes a dictionary file holds, so nothing here depends on how the compiler

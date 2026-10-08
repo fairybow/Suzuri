@@ -108,8 +108,8 @@ public:
     static constexpr bool DEFAULT_DOUBLE_CLICK_WHITESPACE = true;
     static constexpr bool DEFAULT_SELECTION_HANDLES = false;
 
-    // Spellcheck (core/SpellChecker.h). The language is a dictionary's name,
-    // the stem of its .aff and .dic files (core/SpellCheckers.h)
+    // Spellcheck (core/spell/SpellChecker.h). The language is a dictionary's
+    // name, the stem of its .aff and .dic files (core/spell/SpellCheckers.h)
     static constexpr bool DEFAULT_SPELLCHECK = true;
     static constexpr auto DEFAULT_SPELLCHECK_LANGUAGE = "en_US";
 
