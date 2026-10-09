@@ -287,6 +287,7 @@ set(APP_RESOURCES
     resources/Dictionaries.qrc
     resources/Fonts.qrc
     resources/Icons.qrc
+    resources/Licenses.qrc
     resources/Lucide.qrc
 )
 

@@ -9,5 +9,10 @@ The word list comes from SCOWL (http://wordlist.sourceforge.net), by Kevin
 Atkinson. Its licence and credits are in README_en_US.txt, which must stay
 with the two dictionary files.
 
-The files are unmodified. To update, replace all three from the same folder
-upstream and change the commit above.
+LICENSE is the licence and credits section of README_en_US.txt, copied out
+unchanged under the README's title lines, for Suzuri's Licenses dialog. It is
+the one file here that isn't from upstream.
+
+The files from upstream are unmodified. To update, replace all three from the
+same folder upstream, copy the new README's "COPYRIGHT, SOURCES, and CREDITS"
+section into LICENSE again, and change the commit above.
