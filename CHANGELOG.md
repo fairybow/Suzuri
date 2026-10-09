@@ -102,6 +102,25 @@ git push origin v0.0.0-beta.0
 
 <a id="releases"></a>
 
+# 0.4.0-beta.0 (Licenses) - tag v0.4.0-beta.0
+
+## What's New?
+
+Suzuri now credits everything it's built with.
+
+- **Licenses**, under the version in Manage Vaults, lists Suzuri and everything it's built on or bundles: Qt, Hunspell, the English dictionary, the four bundled fonts, and the Lucide icons. Choose one to read its full license text
+- Suzuri's own license, the GNU GPL v3, is first in the list
+
+## Known Issues
+
+- Web addresses and file paths are spellchecked piece by piece, so parts like "github" and "com" are marked
+- Spelling suggestions can take a moment to appear for a long or badly garbled word
+- Focus doesn't always land in the editor after dragging a tab or restoring a session
+- Pop-out windows can reopen behind their vault window
+- macOS and Linux builds are not well-tested
+
+---
+
 # 0.3.0-beta.0 (Edit Menu) - tag v0.3.0-beta.0
 
 ## What's New?
