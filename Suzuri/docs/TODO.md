@@ -18,6 +18,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 
 ## Rough edges
 
+- [ ] The licenses dialog's Qt entry links to Qt's list of the libraries Qt itself bundles (PDFium in Qt PDF, among others) rather than showing their notices. Shipping their texts would mean collecting them from the Qt build in use
 - [ ] Tabs can be dragged past the left or right end of the tab bar without starting a drag; may want to clamp them
 - [ ] No auto-scroll while dragging a tab in an overflowing bar (close to impossible with Qt)
 - [ ] Under the "C" locale (a Linux session with no locale set), the file tree doesn't read a number in a name as a number: "chapter 10" sorts before "chapter 2"
@@ -39,7 +40,7 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [x] `CHANGELOG.md` has only a placeholder release entry. Write the real notes before tagging
 - [ ] Test the OS logout save path (`App::onCommitDataRequest_`)
 - [x] Need the remaining Edit menu and text editor context menu options (cut, copy, paste, select all, delete)
-- [ ] A licenses dialog crediting what Suzuri bundles: Hunspell, the en_US dictionary (`resources/dictionaries/README_en_US.txt` carries its terms), the fonts, and Lucide
+- [x] A licenses dialog crediting what Suzuri bundles: Qt, Hunspell, the en_US dictionary, the fonts, and Lucide
 
 ## Code
 

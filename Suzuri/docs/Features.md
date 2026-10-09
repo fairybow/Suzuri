@@ -34,6 +34,7 @@ The vault picker. It opens on first launch, whenever there is no vault to reopen
 - Recent vaults, most recently used first. A vault whose folder is gone is shown as missing
 - Right-click a vault to rename it, reveal it in the file explorer, or remove it from the list. Removing never touches the folder
 - A vault that is open can't be renamed or removed until its window is closed. The Common Vault can't be renamed at all
+- **Licenses**, under the version, lists Suzuri and everything it is built on or bundles (Qt, Hunspell, the dictionary, the fonts, and the icons), each with its license text
 
 ### Vault switcher
 
@@ -241,6 +242,7 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - **No fallback trash.** If the system trash refuses an entry, Suzuri declines; Obsidian moves it to a `.trash` folder in the vault
 - **A vault whose folder vanishes has its window closed**, after a message, where Obsidian leaves an empty window open
 - **No in-app vault moving.** Move the folder in your file manager, then open it from its new place
+- **Licenses are in the app.** Obsidian lists its third-party credits on its help site
 
 ## Known limits
 

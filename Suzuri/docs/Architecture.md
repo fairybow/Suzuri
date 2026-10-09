@@ -424,6 +424,7 @@ Every user-facing command is a `QAction` in its window's registry, keyed by a st
 A dialog run with `exec()` spins a nested event loop on its caller's stack. If the caller is destroyed inside that loop, the return lands in freed memory.
 
 - The settings dialog is window-modal and opened without `exec()`: Quit can be triggered from inside it and deletes its window.
+- The licenses dialog is window-modal over Manage Vaults, opened without `exec()`, and deletes itself when closed.
 - Go to File does use `exec()`, and is application-modal so that no other window can close its host meanwhile.
 - No dialog is shown while a window is being constructed. Workspace restore, which runs then, refuses a file that would need a prompt.
 
