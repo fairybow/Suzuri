@@ -73,9 +73,12 @@ private:
 
     QLabel* buildVersionLabel_()
     {
-        auto text = VERSION_FULL_QSTRING + "\n" + PUB_RELEASE_NAME_QSTRING;
+        auto text = u"%1<br><i>%2</i>"_s.arg(
+            VERSION_FULL_QSTRING.toHtmlEscaped(),
+            PUB_RELEASE_NAME_QSTRING.toHtmlEscaped());
 
         auto label = new QLabel(text, this);
+        label->setTextFormat(Qt::RichText);
         label->setAlignment(Qt::AlignCenter);
         label->setEnabled(false);
 

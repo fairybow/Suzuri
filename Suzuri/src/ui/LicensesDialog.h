@@ -207,8 +207,9 @@ private:
                  "download.qt.io</a>. Qt includes other libraries, listed "
                  "with their licenses at "
                  "<a href=\"https://doc.qt.io/qt-6/licenses-used-in-qt.html\">"
-                 "doc.qt.io</a>. The LGPL adds to the GPL v3, whose text is "
-                 "under Suzuri.")
+                 "doc.qt.io</a>. The LGPL is a set of extra permissions on "
+                 "top of the GNU GPL v3, whose full text is under the Suzuri "
+                 "entry.")
                   .arg(QString::fromLatin1(qVersion())),
               u"GNU LGPL v3"_s,
               u"https://www.qt.io"_s,
