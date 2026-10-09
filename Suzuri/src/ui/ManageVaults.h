@@ -27,6 +27,7 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QPushButton>
+#include <QSize>
 #include <QStyle>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -38,6 +39,7 @@
 #include "core/VaultEntry.h"
 #include "ui/AboutPanel.h"
 #include "ui/NewVaultDialog.h"
+#include "ui/UiConstants.h"
 #include "ui/UiUtility.h"
 
 namespace Suzuri::Ui {
@@ -129,10 +131,14 @@ private:
         // TODO: Should all instances of delete on close be applied in the class
         // itself or from the outside?
         setAttribute(Qt::WA_DeleteOnClose);
-        // setMinimumSize(560, 380);
-        setFixedSize(560, 380);
 
         setupUi_();
+
+        // A fixed size, but never less than the layout needs: a fixed size
+        // smaller than that squeezes the columns, and a label with a picture
+        // in it (the About panel's icon) is cut off rather than refused
+        setFixedSize(QSize(MANAGE_VAULTS_WIDTH, MANAGE_VAULTS_HEIGHT)
+                         .expandedTo(minimumSizeHint()));
 
         addAction(quitAction);
     }

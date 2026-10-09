@@ -1,0 +1,19 @@
+English (US) spelling dictionary
+
+Files:    en_US.aff, en_US.dic, en_US_README.txt
+From:     https://github.com/LibreOffice/dictionaries (folder "en")
+Commit:   32b006a (21 August 2026)
+Version:  2020.12.07, with LibreOffice's later fixes to en_US.aff
+
+The word list comes from SCOWL (http://wordlist.sourceforge.net), by Kevin
+Atkinson. Upstream, its license and credits are a section of the README,
+named README_en_US.txt there and en_US_README.txt here.
+
+en_US_LICENSE is that section, copied out unchanged under the README's title
+lines, so the Licenses dialog can show it on its own. It is the one file here
+that doesn't come from upstream, and is what Licenses.qrc compiles in.
+
+The other files are unmodified apart from the README's name. To update,
+replace them from the same folder upstream (renaming the README as above),
+copy the new README's "COPYRIGHT, SOURCES, and CREDITS" section into
+en_US_LICENSE again, and change the commit above.

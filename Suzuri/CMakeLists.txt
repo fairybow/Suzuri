@@ -254,6 +254,7 @@ set(APP_HEADERS
     src/ui/BaseWindow.h
     src/ui/CursorPosition.h
     src/ui/FileSwitcher.h
+    src/ui/LicensesDialog.h
     src/ui/LossyOpenPrompt.h
     src/ui/ManageVaults.h
     src/ui/NewVaultDialog.h
@@ -287,6 +288,7 @@ set(APP_RESOURCES
     resources/Dictionaries.qrc
     resources/Fonts.qrc
     resources/Icons.qrc
+    resources/Licenses.qrc
     resources/Lucide.qrc
 )
 

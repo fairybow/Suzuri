@@ -194,6 +194,17 @@ inline constexpr int SETTINGS_NAV_MARGIN = 12;
 inline constexpr int SETTINGS_PAGE_MARGIN = 24;
 inline constexpr auto SETTINGS_NAV_GROUP_TITLE_ROLE = QPalette::PlaceholderText;
 
+// The vault picker (ManageVaults): its size, which is fixed, unless its
+// contents need more
+inline constexpr int MANAGE_VAULTS_WIDTH = 560;
+inline constexpr int MANAGE_VAULTS_HEIGHT = 380;
+
+// The licenses dialog (LicensesDialog): its opening size, and the width of the
+// list of works down its left
+inline constexpr int LICENSES_DIALOG_WIDTH = 860;
+inline constexpr int LICENSES_DIALOG_HEIGHT = 600;
+inline constexpr int LICENSES_LIST_WIDTH = 200;
+
 // One row on a settings page (SettingRow): V_PADDING above and below its
 // content; INFO_SPACING between the name and its description;
 // CONTROL_SPACING the least gap between the text and the control. The

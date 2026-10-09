@@ -22,8 +22,11 @@
 
 #include "core/Publication.h"
 #include "core/Version.h"
+#include "ui/LicensesDialog.h"
 
 namespace Suzuri::Ui {
+
+using namespace Qt::StringLiterals;
 
 // TODO: Ctor param to show App name or not (for Splash)? Might be something
 // that is just handled outside?
@@ -47,9 +50,11 @@ private:
     void setup_()
     {
         auto root_layout = new QVBoxLayout(this);
+        root_layout->setContentsMargins(0, 0, 0, 0);
         root_layout->setSpacing(12);
         root_layout->addWidget(buildIconLabel_());
         root_layout->addWidget(buildVersionLabel_());
+        root_layout->addWidget(buildLicensesLink_());
     }
 
     QLabel* buildIconLabel_()
@@ -68,11 +73,30 @@ private:
 
     QLabel* buildVersionLabel_()
     {
-        auto text = VERSION_FULL_QSTRING + "\n" + PUB_RELEASE_NAME_QSTRING;
+        auto text = u"%1<br><i>%2</i>"_s.arg(
+            VERSION_FULL_QSTRING.toHtmlEscaped(),
+            PUB_RELEASE_NAME_QSTRING.toHtmlEscaped());
 
         auto label = new QLabel(text, this);
+        label->setTextFormat(Qt::RichText);
         label->setAlignment(Qt::AlignCenter);
         label->setEnabled(false);
+
+        return label;
+    }
+
+    // Opens the licenses dialog over this panel's window
+    QLabel* buildLicensesLink_()
+    {
+        auto label = new QLabel(
+            u"<a href=\"licenses\">%1</a>"_s.arg(tr("Licenses")),
+            this);
+        label->setAlignment(Qt::AlignCenter);
+        label->setTextFormat(Qt::RichText);
+
+        connect(label, &QLabel::linkActivated, this, [this] {
+            (new LicensesDialog(window()))->open();
+        });
 
         return label;
     }
