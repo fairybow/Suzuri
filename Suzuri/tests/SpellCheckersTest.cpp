@@ -12,6 +12,7 @@
 
 #include <QByteArray>
 #include <QChar>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QIODevice>
@@ -167,6 +168,32 @@ private slots:
         // Still a language, and its checker is the one that isn't valid
         QVERIFY(checkers.languages().contains(u"zz_ZZ"_s));
         QVERIFY(!checkers.checker(u"zz_ZZ"_s)->isValid());
+    }
+
+    // A language is a file name in the folder, so one that names a file
+    // anywhere else is refused, even when there is a dictionary there
+    void aLanguageMustBeASingleName()
+    {
+        QTemporaryDir outer{};
+        writeDictionary_(outer, u"outside"_s, "hello");
+
+        QDir(outer.path()).mkpath(u"dictionaries/sub"_s);
+        auto folder = Coco::Path(outer.filePath(u"dictionaries"_s));
+
+        QFile::copy(
+            outer.filePath(u"outside.aff"_s),
+            outer.filePath(u"dictionaries/sub/inside.aff"_s));
+        QFile::copy(
+            outer.filePath(u"outside.dic"_s),
+            outer.filePath(u"dictionaries/sub/inside.dic"_s));
+
+        SpellCheckers checkers{ folder };
+
+        for (const auto& language :
+             { u"../outside"_s, u"sub/inside"_s, u"."_s, u".."_s }) {
+            QCOMPARE(checkers.checker(language), nullptr);
+            QVERIFY(!checkers.isUsable(language));
+        }
     }
 
     // --- The dictionary that ships with Suzuri ------------------------------

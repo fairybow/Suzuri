@@ -121,6 +121,10 @@ public:
     // loads no dictionary
     [[nodiscard]] bool isUsable(const QString& language) const
     {
+        if (!isName_(language)) {
+            return false;
+        }
+
         auto affix_file = affixFile_(language);
 
         return affix_file.isFile() && wordFile_(language).isFile() &&
@@ -129,10 +133,15 @@ public:
     }
 
     // The checker for a language, or nullptr when the folder has no
-    // dictionary of that name. The pointer is good for as long as this
-    // object is
+    // dictionary of that name, or the language isn't a single name. The
+    // pointer is good for as long as this object is
     [[nodiscard]] SpellChecker* checker(const QString& language)
     {
+        if (!isName_(language)) {
+            WARN("Not a dictionary name: {}", language);
+            return nullptr;
+        }
+
         if (auto it = checkers_.constFind(language);
             it != checkers_.constEnd()) {
             return it.value();
@@ -152,6 +161,16 @@ public:
 private:
     Coco::Path folder_;
     QHash<QString, SpellChecker*> checkers_{};
+
+    // A language becomes a file name in the folder, and comes from a vault's
+    // settings file, which can be edited by hand. So it must be one name, as a
+    // vault takes a new name for an entry (Vault::rename): with a separator, a
+    // "." or "..", or a root, it would name a file elsewhere
+    [[nodiscard]] static bool isName_(const QString& language)
+    {
+        auto name = Coco::Path(language);
+        return !name.isEmpty() && name.isPlain() && name.name() == name;
+    }
 
     [[nodiscard]] Coco::Path affixFile_(const QString& language) const
     {
