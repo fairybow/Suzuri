@@ -79,6 +79,9 @@ signals:
     // leaf decides what happens
     void detachDragged(int index);
 
+    // A tab was pressed with the left button, and is now the current one
+    void tabPressed(int index);
+
 protected:
     // Preferred tab width: a lone tab is comfortably wide, and tabs stay
     // uniform and compress together as the bar fills. Height untouched
@@ -121,6 +124,11 @@ protected:
         }
 
         QTabBar::mousePressEvent(event);
+
+        // The base makes a left-pressed tab current, so it is by now
+        if (event->button() == Qt::LeftButton && dragPressIndex_ > -1) {
+            emit tabPressed(dragPressIndex_);
+        }
     }
 
     void mouseMoveEvent(QMouseEvent* event) override

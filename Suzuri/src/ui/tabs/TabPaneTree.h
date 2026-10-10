@@ -86,6 +86,20 @@ public:
         return activeLeaf_;
     }
 
+    // Give keyboard focus to the active leaf's current page, if it has one.
+    // In a window that isn't active, the page takes focus when the window
+    // next activates
+    void focusActivePage()
+    {
+        if (!activeLeaf_) {
+            return;
+        }
+
+        if (auto* page = activeLeaf_->currentPage()) {
+            page->setFocus();
+        }
+    }
+
     // Opaque identity of the window family (a VaultWindow and its pop-outs).
     // Set by VaultWindow on its own tree and every pop-out tree it makes; the
     // tree compares it by pointer identity and never dereferences it, so no
@@ -381,6 +395,7 @@ protected:
             src->takeFromOrigin_();
             target->addPage(page, title);
             setActiveLeaf_(target);
+            activateWindow_();
         } else {
             auto orientation =
                 (zone == Zone_::EdgeLeft || zone == Zone_::EdgeRight)
@@ -394,6 +409,7 @@ protected:
             src->takeFromOrigin_();
             fresh->addPage(page, title);
             setActiveLeaf_(fresh);
+            activateWindow_();
         }
 
         event->setDropAction(Qt::MoveAction);
@@ -552,6 +568,16 @@ private:
         splitter->setChildrenCollapsible(false);
 
         return splitter;
+    }
+
+    // A tab dropped here from another window leaves that window the active
+    // one, and a widget takes keyboard focus only in the active window. The
+    // dropped page asked for focus as it was added (TabPaneLeaf::addPage), so
+    // activating this window gives it to the page
+    void activateWindow_()
+    {
+        window()->raise();
+        window()->activateWindow();
     }
 
     // --- Active leaf -------------------------------------------------------

@@ -357,16 +357,11 @@ private:
             this,
             &TabPaneLeaf::onCurrentChanged_);
 
-        // currentChanged fires only when the current index actually moves, so
-        // it misses a click on an already-current tab — most visibly the lone
-        // tab of an inactive leaf. tabBarClicked fires on every click. Handle
-        // only the no-change case here (index is still the current one at emit
-        // time); a click that moves current is left to onCurrentChanged_, whose
-        // page is shown by the time it runs
-        connect(bar_, &QTabBar::tabBarClicked, this, [this](int index) {
-            if (index != bar_->currentIndex()) {
-                return;
-            }
+        // A tab pressed focuses its page, whether it was already current (the
+        // lone tab of an inactive leaf) or just became current. Only a press
+        // does: a tab made current any other way (a restore, a tab closing)
+        // leaves focus where it is
+        connect(bar_, &TabBar::tabPressed, this, [this](int index) {
             if (auto* page = pageAt(index)) {
                 page->setFocus();
             }

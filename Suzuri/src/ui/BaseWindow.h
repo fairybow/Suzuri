@@ -24,6 +24,7 @@
 #include <QMoveEvent>
 #include <QPlainTextEdit>
 #include <QResizeEvent>
+#include <QShowEvent>
 #include <QStatusBar>
 #include <QString>
 #include <QWidget>
@@ -239,6 +240,21 @@ protected:
         emit geometryChanged();
     }
 
+    // The first time the window shows, focus its active tab's page. A window
+    // with no focus widget of its own is given the first one in its tab order
+    // when it activates, which is the sidebar's tree; and the pages a restore
+    // adds lose their focus when the restored tree is put in place. Later
+    // shows (un-minimizing, say) leave focus where the user left it
+    void showEvent(QShowEvent* event) override
+    {
+        QMainWindow::showEvent(event);
+
+        if (!event->spontaneous() && !shown_) {
+            shown_ = true;
+            tree_->focusActivePage();
+        }
+    }
+
     void resizeEvent(QResizeEvent* event) override
     {
         QMainWindow::resizeEvent(event);
@@ -246,6 +262,7 @@ protected:
     }
 
 private:
+    bool shown_ = false;
     TabPaneTree* tree_ = new TabPaneTree(this);
     WordCounter* wordCounter_ = new WordCounter(this);
     CursorPosition* cursorPosition_ = new CursorPosition(this);
