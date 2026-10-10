@@ -37,7 +37,7 @@ Everything is under `Suzuri/src/`, in the `Suzuri` namespace. Apart from `Main.c
 | `ui/tabs/` | The split tree, its leaves, the tab bar and its buttons, the new-tab page |
 | `ui/sidebar/` | The sidebar, the file trees, the common drawer, the vault switcher |
 | `ui/settings/` | The settings dialog, its pages, and their rows |
-| `ui/widgets/` | Controls that know nothing of the app: glyph rendering, the toggle switch, the slider, name checking |
+| `ui/widgets/` | Controls that know nothing of the app: glyph rendering, the toggle switch, the slider, name checking, the row labels shared by the file tree and Go to File |
 
 Folders are for finding files; they don't set namespaces. Everything under `ui/` is in `Suzuri::Ui`, whatever its subfolder; everything else is in `Suzuri`.
 
@@ -163,6 +163,8 @@ flowchart TD
 - **Split.** A split in the splitter's own orientation adds a pane beside the target, halving only the target's space. A split across it wraps the target in a new splitter.
 - **Collapse.** A leaf with no tabs is removed, unless it is the last one. A splitter left with one child is unwrapped. Skipping this leaves invisible one-child splitters that corrupt saved layouts.
 - **The active leaf follows keyboard focus.** The tree watches application focus changes and ignores any outside itself, so leaves need no "I'm active" signal and each window's tree is independent.
+- **A window focuses its active page on first show.** A hidden widget can't take focus, so focusing pages during restore does nothing. `BaseWindow` does it once the window is shown.
+- **A tab press focuses its page after the bar handles it.** `QTabBar::tabBarClicked` fires before the bar changes the current tab, and the change moves focus again, so `TabBar` emits its own `tabPressed` afterward.
 - **The tree reports its active page.** The status bar follows that signal, not focus, because closing a tab or restoring a layout doesn't reliably move focus.
 - **Restore builds a detached tree and swaps it in at the end.** Collapse handling is suspended during a restore; otherwise the half-built tree reports itself empty, which closes a restoring pop-out before it is shown.
 
@@ -364,6 +366,7 @@ All of it but a vault's dictionary is JSON, read and written by stateless free f
 - **State is captured at save time.** Cursor and scroll are read when a save runs, not tracked as they change. Saves are debounced off layout, geometry, and expansion changes, and forced on window close and at exit.
 - **Restore runs before the window is shown,** and observation starts after it, so rebuilding the layout doesn't schedule a save of what was just read.
 - **Scroll is applied after first show.** A scrollbar has no range until the view is laid out.
+- **Recent files follow the active page.** `VaultWindow` records the file of each page that becomes active, in any of its trees, in a `RecentFiles` list. The list is written at save time and schedules no save of its own; it is restored after the tabs, so restoring them doesn't reorder it. Files gone from disk are dropped when it is written.
 - **Every key is declared in `core/WorkspaceKeys.h`.**
 
 ## Spelling
@@ -377,7 +380,7 @@ flowchart TD
     E -.->|borrows| C
 ```
 
-- **One checker per language, shared by every vault.** A dictionary takes a moment and several megabytes to load, so `SpellCheckers` loads one the first time a language is asked for and keeps it. Dictionaries are read from the dictionaries folder in the app data folder, where any pair of `.aff` and `.dic` files is a language. Hunspell reads from disk, so the bundled one is copied out of the resources at launch, and a file already there is never replaced.
+- **One checker per language, shared by every vault.** A dictionary takes a moment and several megabytes to load, so `SpellCheckers` loads one the first time a language is asked for and keeps it. Dictionaries are read from the dictionaries folder in the app data folder, where any pair of `.aff` and `.dic` files is a language. A language must be a single file name, as a vault path must be plain, so a hand-edited setting can't name a file outside the folder; anything else is treated as not installed. Hunspell reads from disk, so the bundled one is copied out of the resources at launch, and a file already there is never replaced.
 - **A checker's answers never change,** because nothing is added to it after it loads. So it keeps every answer, and the editor can ask about each word in view at every paint.
 - **A vault's own words are held apart from the checker.** A checker shared by every vault can't hold one vault's words. `Vault` holds its dictionary (from `.suzuri/dictionary.txt`) and its ignored words as `WordList`s, which apply Hunspell's rule for added words: lowercase also accepts capitals, capitals accept only themselves.
 - **The window's vault decides, as for settings.** `VaultWindow::makeView_` hands each text view the checker for its vault's language (none while spellcheck is off) and one combined list: its vault's dictionary and ignored words, and the Common Vault's dictionary. It hands them over again on `configChanged`, and on `wordsChanged` from either vault.

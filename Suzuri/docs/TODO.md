@@ -4,16 +4,17 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 
 ## Bugs
 
-- [ ] When a tab drag is dropped, activate and focus the tab's widget
 - [ ] VaultSwitcher's menu should open upward
-- [ ] Focus the current tab's widget on restore (something probably keeps the focus from working, because it's surely already called)
-- [ ] After restore, the first click on a tab doesn't focus its widget. Later clicks do
 - [ ] "Go to file" on a new tab in a pop-out used to activate the main window and never return focus to the pop-out. Likely fixed now that the switcher opens over the page's own window: verify
 - [ ] Pop-out Z-order isn't restored: a pop-out that was in front of its vault window comes back behind it. Vault windows restore in the right order among themselves, so this may be pop-outs only, and may not be fixable (which would be fine)
 - [ ] Opening the file that is already in the active, unpinned tab should do nothing
 - [ ] Minor: dragging a file quickly from near its row's bottom edge moves the selection band (grey, blue left edge) down to the next row, though that row isn't selected
 - [ ] The "Options" heading in the settings dialog can be hovered or selected and probably shouldn't be
+- [x] A window's current tab didn't have focus after restore. The tab pages were focused while the window was still hidden, which a widget can't take, so `BaseWindow` now focuses the active page on its first show
+- [x] After restore, the first click on a tab didn't focus its widget. Focus was moved on `QTabBar::tabBarClicked`, which comes before the bar changes the current tab, so the tab switch then took it. `TabBar` now reports a press after the bar has handled it
+- [x] A dropped tab's window wasn't activated, so its page didn't get the keyboard. The tree now raises and activates its window after a drop
 - [x] The text editor's context menu opened to the left of the pointer, by the width of the line-number gutter and the margin. Qt gives a scroll area's menu position in its viewport's coordinates, and it was mapped from the editor's
+- [x] The spelling language in `settings.json` was used as a file name without being checked, so a hand-edited `../x` named a dictionary outside the dictionaries folder. `SpellCheckers` now takes only a single name, and treats anything else as not installed
 - [x] A path with a `..` segment passed `Vault::contains`, so a rename or move could take an entry out of the vault, and `Vault::openModel` opened a `../` or absolute path from a hand-edited `workspace.json`. `Vault` now takes only plain paths (see "Identity" in [Architecture.md](Architecture.md))
 
 ## Rough edges
@@ -27,7 +28,6 @@ Bugs and code chores. Features that aren't built yet are in [Future.md](Future.m
 - [ ] When `PrimeDocument` resets a view that was out of step, that view's cursor goes to the start of the file
 - [ ] A pane whose files were all deleted between sessions is restored as an empty pane inside a split, where in use a pane closes with its last tab. `TabPaneTree::restore` builds the saved shape and prunes nothing. A split left with one child (by this, or by a hand-edited `workspace.json`) is kept the same way
 - [ ] On Windows, deleting a folder that a tree has listed, from outside Suzuri, logs Qt's "FindNextChangeNotification failed ... (Access is denied.)" once per watched folder. Harmless: the rows still go
-- [ ] The spelling language in `settings.json` is used as a file name without being checked, so a hand-edited `../x` names a dictionary outside the dictionaries folder. `SpellCheckers` should take only a single name, as `Vault` takes only plain paths
 - [ ] When `Vault::addToDictionary` can't write `dictionary.txt`, the failure is only logged: the word is accepted until the vault closes and is gone the next time it opens, with nothing shown
 - [ ] A bundled dictionary is copied to the dictionaries folder once and never replaced, so a newer one in a later release doesn't reach an existing install
 - [ ] If a file reloads from disk while the editor's context menu is open, a suggestion chosen afterward is inserted wherever the word's cursor ended up, not over the word

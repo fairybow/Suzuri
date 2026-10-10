@@ -13,7 +13,6 @@ Nothing here is a promise or a schedule.
 
 ### Go to File
 
-- Recently opened files for an empty query, in place of the full alphabetical list. Obsidian does this, and it is what makes switching between two files quick (open, Down, Enter). Needs a per-vault record of recent files
 - Create a file from the switcher: Enter with no match creates a file with the typed name. Needs a default extension and a ruling on folders in the typed text (`drafts/Chapter 2`)
 - Fuzzy matching
 

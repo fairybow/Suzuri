@@ -94,8 +94,10 @@ Ctrl+O, or "Go to file" on a new tab. A search field over every file in the vaul
 
 - Type any words, in any order. Each must appear somewhere in the file's path
 - Matches in the file name rank above matches in the folder path
+- With nothing typed, the files you opened most recently come first, newest first and labeled RECENT, followed by every other file. If the top one is the file you're in, the next is selected, so Ctrl+O then Enter goes back to the previous file
 - Enter opens the file in the current tab. Ctrl+Enter opens it in a new tab
-- Common Vault files are marked with the box icon
+- Common Vault files are labeled COMMON
+- Recent files are remembered per vault
 
 ## Tabs, panes, and windows
 
@@ -234,6 +236,7 @@ Suzuri follows Obsidian's behavior wherever it has no reason not to. Where it di
 - **Bold and italic font settings**, since there is no Markdown styling to carry emphasis
 - **A margin setting** in place of "Readable line length", and a switch to turn wrapping off
 - **Find has Match case and Whole word.** Obsidian's search in a file has neither. Suzuri's highlights also stay while you edit, until the bar is closed
+- **Go to File lists every file with nothing typed,** the recent ones first. Obsidian's Quick switcher lists only the recent ones
 - **Delete and Select All in the right-click menu.** Obsidian's editor menu has only Cut, Copy, and Paste
 - **One spelling language per vault.** Obsidian can check several at once
 - **TIFF images** are supported. SVG and AVIF are not
