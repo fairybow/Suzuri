@@ -49,10 +49,11 @@ namespace Suzuri::Ui {
 // .suzuri/.gitignore naming it is written when the dot-folder is first created
 // (ensureVaultDotDir). Workspace refs are vault-relative PATHS, with no id.
 //
-// The FileRef<->view translation and pop-out lifecycle both belong to
-// VaultWindow (the composition root), so they arrive as Hooks: this class knows
-// geometry, sidebar sizes, and the opaque tree blob — never what a page IS or
-// how a window is made.
+// The FileRef<->view translation, the recent files, and the pop-out lifecycle
+// all belong to VaultWindow (the composition root), so they arrive as Hooks:
+// this class knows geometry, sidebar sizes, and the opaque tree blob — never
+// what a page IS or how a window is made. The recent files are read when a save
+// runs, like a view's cursor, so a new one schedules no save of its own.
 //
 // Restore runs once, from VaultWindow::setup_, BEFORE the window is shown, so
 // geometry lands pre-show. The MAIN window's change sources are wired only
@@ -95,6 +96,12 @@ public:
         // it and wires its requests; this class fills it and decides to show or
         // discard it
         std::function<PopoutHandle()> createPopout{};
+
+        // The window's recent files, to save and to restore. Restored after
+        // the tabs, so the saved order replaces the one their restore
+        // recorded
+        std::function<QJsonValue()> describeRecentFiles{};
+        std::function<void(const QJsonValue&)> restoreRecentFiles{};
     };
 
     WorkspaceFile(
@@ -164,6 +171,8 @@ public:
             for (const auto& entry : popouts) {
                 restorePopout_(entry.toObject());
             }
+
+            hooks_.restoreRecentFiles(main.value(WorkspaceKeys::RECENT_FILES));
         }
 
         startObserving_();
@@ -376,6 +385,7 @@ private:
             main[WorkspaceKeys::COMMON_DRAWER] =
                 commonDrawer_->serializeState();
         }
+        main[WorkspaceKeys::RECENT_FILES] = hooks_.describeRecentFiles();
 
         QJsonObject root{};
         root[WorkspaceKeys::VERSION] = SCHEMA_VERSION_;

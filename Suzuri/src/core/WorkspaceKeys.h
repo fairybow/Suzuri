@@ -25,7 +25,8 @@ using namespace Qt::StringLiterals;
 //   WorkspaceFile — the outer file structure (sections 1–2)
 //   Drawer        — the common drawer's blob under COMMON_DRAWER (section 2)
 //   TabPaneTree   — the split/leaf tree blob under TREE (section 3)
-//   VaultWindow   — a tab entry inside a leaf's TABS (section 4)
+//   VaultWindow   — a tab entry inside a leaf's TABS (section 4), and the
+//                   RECENT_FILES array (section 2)
 //   the file views — the per-view STATE blob inside a tab entry (section 5)
 //
 // TYPE is deliberately shared: it is the object-type discriminator at every
@@ -70,6 +71,11 @@ inline const QString COMMON_DRAWER = u"commonDrawer"_s;
 // "expanded" flag — Obsidian's name, and clear of the folder-EXPANDED key above
 inline const QString DRAWER_COLLAPSED = u"collapsed"_s;
 inline const QString DRAWER_HEIGHT = u"height"_s;
+
+// The files most recently made active in this window or its pop-outs, newest
+// first (RecentFiles); main only. An array of objects each with VAULT and
+// FILE_PATH, as a tab entry has (section 4). Written by VaultWindow
+inline const QString RECENT_FILES = u"recentFiles"_s;
 
 // --- 3. Tree node (TabPaneTree, nested under TREE) --------------------------
 

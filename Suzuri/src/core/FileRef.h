@@ -25,6 +25,9 @@ struct FileRef
 {
     Vault* vault = nullptr; // a project vault, or the common one
     Coco::Path relative{};  // relative to that vault's root
+
+    // The same file: the same vault, and the same path as written
+    bool operator==(const FileRef&) const = default;
 };
 
 } // namespace Suzuri

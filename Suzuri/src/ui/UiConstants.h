@@ -44,9 +44,9 @@ inline constexpr int TAB_BUTTON_ICON_EXTENT = 12;
 inline constexpr int NEW_TAB_BUTTON_EXTENT = 20;
 inline constexpr int NEW_TAB_BUTTON_ICON_EXTENT = 12;
 
-// The Common Vault glyph, shared by the FileSwitcher's rows and the tab mark
-// on a Common Vault file's tab. One path so swapping the Lucide icon is a
-// one-place edit
+// The Common Vault glyph, shared by the Common Vault drawer's header and the
+// tab mark on a Common Vault file's tab. One path so swapping the Lucide icon
+// is a one-place edit
 inline constexpr auto COMMON_VAULT_ICON_PATH = ":/lucide/Box.svg";
 
 // The disclosure chevrons, shared by the vault trees' branch column
@@ -89,8 +89,6 @@ inline constexpr auto TAB_CLOSE_ICON_ROLE = QPalette::WindowText;
 inline constexpr auto TAB_PIN_ICON_ROLE = QPalette::PlaceholderText;
 inline constexpr auto NEW_TAB_ICON_ROLE = QPalette::WindowText;
 inline constexpr auto TAB_COMMON_VAULT_ICON_ROLE = QPalette::PlaceholderText;
-inline constexpr auto FILE_SWITCHER_COMMON_VAULT_ICON_ROLE =
-    QPalette::PlaceholderText;
 
 inline constexpr int DEFAULT_VAULT_WINDOW_WIDTH = 800;
 inline constexpr int DEFAULT_VAULT_WINDOW_HEIGHT = 600;
@@ -108,19 +106,21 @@ inline const QString DROP_OVERLAY_QSS =
 // Fed to QTreeView::setAutoExpandDelay, whose own timer does the expanding
 inline constexpr int TREE_AUTO_EXPAND_MS = 700;
 
-// The extension badge at the right end of each file row in the vault trees
-// (VaultTreeItemDelegate). FONT_SCALE shrinks the row's font for the letters;
-// H_PADDING / V_PADDING are the room between the letters and the pill's edge;
-// RADIUS rounds the pill; RIGHT_MARGIN insets it from the view's right edge;
-// GAP is the least room kept between an elided name and the badge.
-// BORDER_WIDTH 0 hides the pill and leaves only the letters
-inline constexpr qreal TREE_BADGE_FONT_SCALE = 0.8;
-inline constexpr int TREE_BADGE_H_PADDING = 4;
-inline constexpr int TREE_BADGE_V_PADDING = 1;
-inline constexpr int TREE_BADGE_RADIUS = 3;
-inline constexpr int TREE_BADGE_RIGHT_MARGIN = 6;
-inline constexpr int TREE_BADGE_GAP = 8;
-inline constexpr int TREE_BADGE_BORDER_WIDTH = 0;
+// The labels at the right end of an item-view row (ui/widgets/RowBadges.h): a
+// vault tree's file extensions, and Go to File's RECENT and COMMON.
+// FONT_SCALE shrinks the row's font for the letters; H_PADDING / V_PADDING
+// are the room between the letters and a label's edge; RIGHT_MARGIN insets the
+// last label from the view's right edge, SPACING separates two labels, and GAP
+// is the least room kept between an elided name and the first. A label drawn
+// with a border has one BORDER_WIDTH wide, rounded by RADIUS
+inline constexpr qreal ROW_BADGE_FONT_SCALE = 0.8;
+inline constexpr int ROW_BADGE_H_PADDING = 4;
+inline constexpr int ROW_BADGE_V_PADDING = 1;
+inline constexpr int ROW_BADGE_RIGHT_MARGIN = 6;
+inline constexpr int ROW_BADGE_SPACING = 4;
+inline constexpr int ROW_BADGE_GAP = 8;
+inline constexpr qreal ROW_BADGE_BORDER_WIDTH = 1.0;
+inline constexpr int ROW_BADGE_RADIUS = 3;
 
 // The file / folder glyph left of each row's name in the vault trees
 // (VaultTreeItemDelegate). ENABLED false skips them outright: nothing is
@@ -263,12 +263,10 @@ inline constexpr int FONT_FAMILY_BOX_MIN_CHARS = 24;
 
 // The Go to File switcher (FileSwitcher), placed top-center over its host
 // window. WIDTH is clamped to the host's width; TOP_OFFSET is the gap between
-// the host's top edge and the switcher's. ICON_EXTENT is the Common Vault
-// glyph's square size on its rows
+// the host's top edge and the switcher's
 inline constexpr int FILE_SWITCHER_WIDTH = 560;
 inline constexpr int FILE_SWITCHER_HEIGHT = 360;
 inline constexpr int FILE_SWITCHER_TOP_OFFSET = 80;
-inline constexpr int FILE_SWITCHER_ICON_EXTENT = 14;
 
 // The window status bar's items (WordCounter, CursorPosition). TEXT_ROLE is the
 // pen their text is drawn with, muted like the sidebar's chrome. ITEM_H_PADDING

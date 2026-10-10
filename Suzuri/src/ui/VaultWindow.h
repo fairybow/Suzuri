@@ -18,6 +18,7 @@
 #include <QAction>
 #include <QCloseEvent>
 #include <QIcon>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QList>
@@ -36,6 +37,7 @@
 #include "core/ActionIds.h"
 #include "core/AppActions.h"
 #include "core/FileRef.h"
+#include "core/RecentFiles.h"
 #include "core/Vault.h"
 #include "core/VaultEntry.h"
 #include "core/WorkspaceKeys.h"
@@ -233,6 +235,11 @@ private:
     // setup_, restores before App shows us
     WorkspaceFile* workspaceFile_ = nullptr;
 
+    // The files this window and its pop-outs have made active, newest first,
+    // for Go to File. Recorded from every tree's activePageChanged, saved with
+    // the workspace
+    RecentFiles recentFiles_{};
+
     // Pop-outs are siblings, not Qt children: a child window can never stack
     // behind its owner. Siblings can — but Qt doesn't reap them when we close,
     // so we own their lifetime here. A pop-out never outlives its VaultWindow
@@ -306,6 +313,12 @@ private:
             this,
             &VaultWindow::onFileDropped_);
 
+        connect(
+            tree,
+            &TabPaneTree::activePageChanged,
+            this,
+            &VaultWindow::recordRecentFile_);
+
         // Which dropped files this tree will accept: the ones one of this
         // window's vaults owns. Same resolution onFileDropped_ uses, asked
         // during the drag instead of after the release, so a foreign vault's
@@ -349,6 +362,12 @@ private:
                     },
                 .enumeratePopouts = [this] { return enumeratePopouts_(); },
                 .createPopout = [this] { return createPopoutForRestore_(); },
+                .describeRecentFiles =
+                    [this] { return describeRecentFiles_(); },
+                .restoreRecentFiles =
+                    [this](const QJsonValue& value) {
+                        restoreRecentFiles_(value);
+                    },
             },
             this);
 
@@ -490,7 +509,14 @@ private:
     // two vaults can be picked
     void onGoToFileRequested_()
     {
-        FileSwitcher switcher(this, vault_, commonVault_);
+        auto* view = activeFileView();
+
+        FileSwitcher switcher(
+            this,
+            vault_,
+            commonVault_,
+            recentFiles_.files(),
+            view ? view->model()->fileRef() : FileRef{});
         if (switcher.exec() != QDialog::Accepted) {
             return;
         }
@@ -763,6 +789,72 @@ private:
         return obj;
     }
 
+    // A page that becomes a tree's active page is the file it shows, when it
+    // shows one; a new tab or an empty pane records nothing
+    void recordRecentFile_(QWidget* page)
+    {
+        if (auto* view = qobject_cast<AbstractFileView*>(page)) {
+            recentFiles_.record(view->model()->fileRef());
+        }
+    }
+
+    // The recent files as workspace.json keeps them: each with its vault
+    // (this/common, as describePage_ writes it) and vault-relative path. A
+    // file no longer on disk is left out, so a deleted or moved file drops
+    // out of the list at the next save
+    [[nodiscard]] QJsonValue describeRecentFiles_() const
+    {
+        namespace WK = WorkspaceKeys;
+
+        QJsonArray array{};
+
+        for (const auto& ref : recentFiles_.files()) {
+            if (!ref.vault->absolutePathOf(ref.relative).exists()) {
+                continue;
+            }
+
+            QJsonObject obj{};
+            obj[WK::VAULT] =
+                (ref.vault == vault_) ? WK::VAULT_THIS : WK::VAULT_COMMON;
+            obj[WK::FILE_PATH] = ref.relative.prettyQString();
+            array.append(obj);
+        }
+
+        return array;
+    }
+
+    // The saved list replaces whatever restoring the tabs recorded. A
+    // workspace saved before there was a list has none, and keeps those.
+    // Only entries naming a plain path are kept: the vault refuses any other
+    // when it is opened
+    void restoreRecentFiles_(const QJsonValue& value)
+    {
+        namespace WK = WorkspaceKeys;
+
+        if (!value.isArray()) {
+            return;
+        }
+
+        QList<FileRef> files{};
+
+        for (const auto& entry : value.toArray()) {
+            auto obj = entry.toObject();
+            auto relative = Coco::Path(obj.value(WK::FILE_PATH).toString());
+            auto* vault = (obj.value(WK::VAULT).toString() == WK::VAULT_COMMON)
+                              ? commonVault_
+                              : vault_;
+
+            if (!vault || relative.isEmpty() || !relative.isPlain() ||
+                relative.hasRoot()) {
+                continue;
+            }
+
+            files << FileRef{ vault, relative };
+        }
+
+        recentFiles_.setFiles(files);
+    }
+
     // Rebuild a persisted tab into a live view, or drop it. Resolves the vault
     // (this/common), checks the file still exists — a moved/deleted file is
     // silently dropped — then mints a view on the (deduped) model exactly as
@@ -935,6 +1027,12 @@ private:
             this,
             &VaultWindow::onFileDropped_);
 
+        connect(
+            tree,
+            &TabPaneTree::activePageChanged,
+            this,
+            &VaultWindow::recordRecentFile_);
+
         // Which dropped files this tree will accept: the ones one of this
         // window's vaults owns. Same resolution onFileDropped_ uses, asked
         // during the drag instead of after the release, so a foreign vault's
@@ -1039,7 +1137,12 @@ private:
         // before, so the lookup reflects where the page lives once the modal
         // loop returns
         connect(page, &NewTabPage::openRequested, this, [this, page] {
-            FileSwitcher switcher(page->window(), vault_, commonVault_);
+            FileSwitcher switcher(
+                page->window(),
+                vault_,
+                commonVault_,
+                recentFiles_.files(),
+                FileRef{});
             if (switcher.exec() != QDialog::Accepted) {
                 return;
             }

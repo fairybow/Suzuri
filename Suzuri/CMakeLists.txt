@@ -201,6 +201,7 @@ set(APP_HEADERS
     src/core/Io.h
     src/core/JsonIo.h
     src/core/Publication.h
+    src/core/RecentFiles.h
     src/core/TextCounts.h
     src/core/Vault.h
     src/core/VaultConfig.h
@@ -247,6 +248,7 @@ set(APP_HEADERS
     src/ui/widgets/DisplaySlider.h
     src/ui/widgets/Glyph.h
     src/ui/widgets/GlyphButton.h
+    src/ui/widgets/RowBadges.h
     src/ui/widgets/ToggleSwitch.h
     src/ui/widgets/UserTextEntry.h
 

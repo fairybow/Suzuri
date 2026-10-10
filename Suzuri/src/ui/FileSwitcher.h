@@ -14,21 +14,27 @@
 
 #include <algorithm>
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDialog>
 #include <QEvent>
 #include <QGuiApplication>
-#include <QIcon>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QList>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QPalette>
-#include <QPixmap>
+#include <QModelIndex>
+#include <QObject>
+#include <QPainter>
+#include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QStyle>
+#include <QStyleOptionViewItem>
+#include <QStyledItemDelegate>
 #include <QVBoxLayout>
+#include <QtTypes>
 
 #include <Coco/Debug.h>
 #include <Coco/Path.h>
@@ -37,9 +43,62 @@
 #include "core/Vault.h"
 #include "ui/OpenMode.h"
 #include "ui/UiConstants.h"
-#include "ui/widgets/Glyph.h"
+#include "ui/widgets/RowBadges.h"
 
 namespace Suzuri::Ui {
+
+namespace Internal {
+
+// Paints a Go to File row with its labels ("RECENT", "COMMON") at the right
+// end, each with a border so two side by side read as two. The labels ride on
+// the item as a QStringList under BADGES_ROLE, in the order they're drawn left
+// to right; a row with none is the style's alone
+class FileSwitcherDelegate_ : public QStyledItemDelegate
+{
+public:
+    static constexpr auto BADGES_ROLE = Qt::UserRole;
+
+    explicit FileSwitcherDelegate_(QObject* parentList)
+        : QStyledItemDelegate(parentList)
+    {
+    }
+
+    void paint(
+        QPainter* painter,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index) const override
+    {
+        auto badges = index.data(BADGES_ROLE).toStringList();
+
+        if (badges.isEmpty()) {
+            QStyledItemDelegate::paint(painter, option, index);
+            return;
+        }
+
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+
+        auto style = opt.widget ? opt.widget->style() : QApplication::style();
+        auto badge_font = RowBadges::font(opt.font);
+        auto badge_rects = RowBadges::rects(opt.rect, badges, badge_font);
+
+        opt.text =
+            RowBadges::nameElidedBefore(opt, style, badge_rects[0].left());
+        style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
+
+        for (qsizetype i = 0; i < badges.size(); ++i) {
+            RowBadges::paint(
+                painter,
+                opt,
+                badges[i],
+                badge_font,
+                badge_rects[i],
+                true);
+        }
+    }
+};
+
+} // namespace Internal
 
 // Go to File: an Obsidian-style quick switcher — a filter field over a flat
 // list of every file the window's two vaults show. The listing is
@@ -51,13 +110,22 @@ namespace Suzuri::Ui {
 // The list is a snapshot taken at construction. A file deleted before the pick
 // is refused by Vault::openModel, which is the authoritative gate either way.
 //
+// An empty query lists the window's recent files first (RecentFiles), newest
+// first, then every other file in the presorted order below. When the newest
+// is the file already in the active tab, the second row starts selected, so
+// Enter goes back to the file before it. Obsidian's quick switcher also opens
+// on the recent files.
+//
 // Matching: case-insensitive; the query splits on spaces and every term must
 // appear somewhere in the vault-relative path. Rows whose FILE NAME holds every
 // term rank above path-only matches; within a tier, project files come before
-// Common Vault files, then alphabetical by path. An empty query therefore lists
-// everything in that presorted order. Divergences from Obsidian
-// (docs/Future.md, "Go to File"): no fuzzy scoring, no recents for the empty
-// query, and Enter with no match does nothing rather than creating a note.
+// Common Vault files, then alphabetical by path. Recent files get no extra
+// weight. Divergences from Obsidian (docs/Future.md, "Go to File"): no fuzzy
+// scoring, and Enter with no match does nothing rather than creating a note.
+//
+// A recent file's row says RECENT at its right end, wherever it appears, and a
+// Common Vault file's says COMMON (Internal::FileSwitcherDelegate_). A recent
+// Common Vault file has both, RECENT against the edge.
 //
 // Keys: focus never leaves the field. Up/Down/PageUp/PageDown are forwarded to
 // the list; Enter opens the current row as ReplaceActive, Ctrl+Enter as NewTab
@@ -77,11 +145,17 @@ public:
 
     // parentWindow is the window the switcher opens over — the one hosting the
     // request, which may be a pop-out. commonVault may be null, and is skipped
-    // if it's the same vault
-    FileSwitcher(QWidget* parentWindow, Vault* vault, Vault* commonVault)
+    // if it's the same vault. recentFiles are the window's, newest first, and
+    // current the file in its active tab (none for a new tab)
+    FileSwitcher(
+        QWidget* parentWindow,
+        Vault* vault,
+        Vault* commonVault,
+        const QList<FileRef>& recentFiles,
+        const FileRef& current)
         : QDialog(parentWindow)
     {
-        setup_(vault, commonVault);
+        setup_(vault, commonVault, recentFiles, current);
     }
 
     ~FileSwitcher() override { TRACER; }
@@ -131,13 +205,23 @@ private:
 
     QList<Entry_> entries_{};  // presorted: project first, then by path
     QList<qsizetype> shown_{}; // entries_ indices, in list-row order
+
+    // The recent files that are listed, as entries_ indices, newest first;
+    // the same as a set, for the RECENT label; and the row an empty query
+    // starts on (see class note)
+    QList<qsizetype> recent_{};
+    QSet<qsizetype> recentSet_{};
+    int emptyQueryRow_ = 0;
+
     QLineEdit* queryEdit_ = nullptr;
     QListWidget* list_ = nullptr;
-    QIcon commonIcon_{};
-    QIcon blankIcon_{};
     Pick pick_{};
 
-    void setup_(Vault* vault, Vault* commonVault)
+    void setup_(
+        Vault* vault,
+        Vault* commonVault,
+        const QList<FileRef>& recentFiles,
+        const FileRef& current)
     {
         setWindowTitle(tr("Go to File"));
         setWindowModality(Qt::ApplicationModal);
@@ -148,6 +232,7 @@ private:
         }
 
         presort_();
+        findRecent_(recentFiles, current);
         setupUi_();
         placeOverParent_();
         refilter_();
@@ -182,10 +267,28 @@ private:
             });
     }
 
+    // Each recent file that is in the listing, in the recent order. One that
+    // isn't (deleted or moved since) is skipped
+    void findRecent_(const QList<FileRef>& recentFiles, const FileRef& current)
+    {
+        for (const auto& ref : recentFiles) {
+            for (qsizetype i = 0; i < entries_.size(); ++i) {
+                if (entries_[i].fileRef == ref) {
+                    recent_ << i;
+                    recentSet_ << i;
+                    break;
+                }
+            }
+        }
+
+        if (recent_.size() > 1 &&
+            entries_[recent_.first()].fileRef == current) {
+            emptyQueryRow_ = 1;
+        }
+    }
+
     void setupUi_()
     {
-        setupIcons_();
-
         queryEdit_ = new QLineEdit(this);
         queryEdit_->setPlaceholderText(tr("Type to find a file..."));
         queryEdit_->installEventFilter(this);
@@ -199,8 +302,7 @@ private:
         list_ = new QListWidget(this);
         list_->setFocusPolicy(Qt::NoFocus); // typing always lands in the field
         list_->setUniformItemSizes(true);   // cheap layout for long listings
-        list_->setIconSize(
-            { FILE_SWITCHER_ICON_EXTENT, FILE_SWITCHER_ICON_EXTENT });
+        list_->setItemDelegate(new Internal::FileSwitcherDelegate_(list_));
 
         connect(
             list_,
@@ -217,26 +319,6 @@ private:
         root_layout->addWidget(list_);
 
         queryEdit_->setFocus();
-    }
-
-    // Common rows carry the tinted glyph. Project rows get a transparent icon
-    // of the same size: the item delegate only reserves decoration space for a
-    // row that HAS an icon, so without it project paths would sit flush left
-    // and common paths indented
-    void setupIcons_()
-    {
-        auto extent = FILE_SWITCHER_ICON_EXTENT;
-
-        commonIcon_ = QIcon(
-            Glyph::render(
-                QString::fromLatin1(COMMON_VAULT_ICON_PATH),
-                extent,
-                palette().color(FILE_SWITCHER_COMMON_VAULT_ICON_ROLE),
-                devicePixelRatioF()));
-
-        QPixmap blank(extent, extent);
-        blank.fill(Qt::transparent);
-        blankIcon_ = QIcon(blank);
     }
 
     // Top-center over the host window, Obsidian-style, instead of QDialog's
@@ -264,6 +346,19 @@ private:
 
         shown_.clear();
 
+        if (terms.isEmpty()) {
+            shown_ = recent_;
+
+            for (qsizetype i = 0; i < entries_.size(); ++i) {
+                if (!recentSet_.contains(i)) {
+                    shown_ << i;
+                }
+            }
+
+            rebuildList_(emptyQueryRow_);
+            return;
+        }
+
         for (qsizetype i = 0; i < entries_.size(); ++i) {
             if (containsAll_(entries_[i].path, terms)) {
                 shown_ << i;
@@ -277,10 +372,11 @@ private:
             return containsAll_(entries_[i].name, terms);
         });
 
-        rebuildList_();
+        rebuildList_(0);
     }
 
-    void rebuildList_()
+    // currentRow is the row to select, when there is one
+    void rebuildList_(int currentRow)
     {
         list_->setUpdatesEnabled(false);
         list_->clear();
@@ -288,17 +384,23 @@ private:
         for (auto i : shown_) {
             const auto& entry = entries_[i];
 
-            auto* item = new QListWidgetItem(
-                entry.isCommon ? commonIcon_ : blankIcon_,
-                entry.path,
-                list_);
+            auto* item = new QListWidgetItem(entry.path, list_);
+
+            QStringList badges{};
 
             if (entry.isCommon) {
+                badges << tr("COMMON");
                 item->setToolTip(tr("Common Vault"));
             }
+
+            if (recentSet_.contains(i)) {
+                badges << tr("RECENT");
+            }
+
+            item->setData(Internal::FileSwitcherDelegate_::BADGES_ROLE, badges);
         }
 
-        list_->setCurrentRow(shown_.isEmpty() ? -1 : 0);
+        list_->setCurrentRow(shown_.isEmpty() ? -1 : currentRow);
         list_->setUpdatesEnabled(true);
     }
 
